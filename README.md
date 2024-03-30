@@ -2,7 +2,13 @@
 Data processing and models training for explainable pose estimation models
 
 ## Introduction
-This repository contains the code for data processing and model training for explainable pose estimation models in exercise analysis.
+Project takes into account four methods:
+- LSTM
+- GraphCNN
+- SignalCNN
+- Statistical
+
+to classify and  explain performed errors in exercise performance. EC3D dataset of 3D joints representations was obtained from https://github.com/Jacoo-Zhao/3D-Pose-Based-Feedback-For-Physical-Exercises?tab=readme-ov-file.
 
 ## Installation
 1. Clone the repository:
@@ -11,14 +17,15 @@ This repository contains the code for data processing and model training for exp
     ```
 2. Install the required dependencies:
     ```bash
-    pip install -r requirements.txt
+    pip install -e .
     ```
 
 ## Usage
 1. Preprocess the data:
     ```bash
-    python preprocess.py
+    python scripts/process_data.py --data_path $PATH_TO_EC3D_DATASET --output_dir $DESIRED_OUTPUT_PATH
     ```
+
 2. Train the model:
     ```bash
     python train.py

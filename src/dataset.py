@@ -17,7 +17,7 @@ ANGLE_FEATUERES = [
 
 
 class ExerciseDataset(Dataset):
-    def __init__(self, exercise_folder: str, representation: str = "joints"):
+    def __init__(self, exercise_data: pd.DataFrame, representation: str = "joints"):
         if representation == "joints":
             feature_names = POSITION_FEATURES
         elif representation == "angles":
@@ -25,18 +25,15 @@ class ExerciseDataset(Dataset):
         else:
             raise ValueError("Invalid representation")
 
-        self.exercise_folder = exercise_folder
         self.labels = []
         self.data = []
-        for file in os.listdir(exercise_folder):
-            data = pd.read_csv(os.path.join(exercise_folder, file))
-            for _, rep in data.groupby("rep"):
-                self.labels.append(rep["label"].values[0])
-                ts = []
-                for _, frame in rep.groupby("frame"):
-                    frame_features = frame[feature_names].values.reshape(-1)
-                    ts.append(frame_features)
-                self.data.append(ts)
+        for _, rep in exercise_data.groupby(["rep", "label"]):
+            self.labels.append(rep["label"].values[0])
+            ts = []
+            for _, frame in rep.groupby("frame"):
+                frame_features = frame[feature_names].values.reshape(-1)
+                ts.append(frame_features)
+            self.data.append(ts)
 
     def __len__(self):
         return len(self.labels)
