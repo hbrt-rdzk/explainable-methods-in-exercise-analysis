@@ -1,6 +1,7 @@
+import os
+
 import numpy as np
 import pandas as pd
-import os
 
 LABELS_COLUMNS = ["exercise", "subject", "label", "rep", "frame"]
 
@@ -20,6 +21,33 @@ PLANK_LABELS = {
     1: "correct",
     7: "arched_back",
     8: "hunched_back",
+}
+
+OPENPOSE_JOINTS = {
+    0: "nose",
+    1: "upper_spine",
+    2: "right_shoulder",
+    3: "right_arm",
+    4: "right_wrist",
+    5: "left_shoulder",
+    6: "left_arm",
+    7: "left_wrist",
+    8: "lower_spine",
+    9: "right_hip",
+    10: "right_knee",
+    11: "right_foot",
+    12: "left_hip",
+    13: "left_knee",
+    14: "left_foot",
+}
+
+OPENPOSE_ANGLES = {
+    "left_knee": [14, 13, 12],
+    "right_knee": [11, 10, 9],
+    "right_arm": [4, 3, 2],
+    "left_arm": [7, 6, 5],
+    "left_hip": [13, 12, 5],
+    "right_hip": [10, 9, 2],
 }
 
 
@@ -42,21 +70,51 @@ class Processor:
             (lunges_df, LUNGES_LABELS),
             (plank_df, PLANK_LABELS),
         ]:
-            exercise_dfs = []
+            joints_data = []
+            angles_data = []
+
             for label, label_name in labels.items():
-                exercise_dfs.append(
+                joints_data.append(
                     self.__get_df_from_frames(
                         df[df["label"] == label], poses, label_name
                     )
                 )
-
-            pd.concat(exercise_dfs).to_csv(
-                os.path.join(output_dir, f"{df['exercise'].values[0].lower()}.csv"),
+            joints_df = pd.concat(joints_data)
+            joints_df.to_csv(
+                os.path.join(
+                    output_dir, "joints", f"{df['exercise'].values[0].lower()}.csv"
+                ),
                 index=False,
             )
-
-    def run(self) -> None:
-        self.process_data()
+            for (label, rep, frame), rep_data in joints_df.groupby(
+                ["label", "rep", "frame"]
+            ):
+                rep_data = rep_data.reset_index()
+                angles = {}
+                for angle_name, angle_joints in OPENPOSE_ANGLES.items():
+                    joints_3d_positions = rep_data.loc[angle_joints][
+                        ["x", "y", "z"]
+                    ].astype("float")
+                    angles[angle_name] = self.__calculate_3D_angle(
+                        *joints_3d_positions.values
+                    )
+                angles_data.append(
+                    pd.Series(
+                        {
+                            "rep": rep,
+                            "frame": frame,
+                            **angles,
+                            "label": label,
+                        }
+                    )
+                )
+            angles_df = pd.DataFrame(angles_data)
+            angles_df.to_csv(
+                os.path.join(
+                    output_dir, "angles", f"{df['exercise'].values[0].lower()}.csv"
+                ),
+                index=False,
+            )
 
     def __get_rep_frames_from_df(self, df: pd.DataFrame) -> pd.Grouper:
         groups = df.groupby("subject")
@@ -82,10 +140,10 @@ class Processor:
             final_rep = np.array(
                 [
                     np.full_like(rep_3d_joints_x, rep_num, dtype=int),
+                    np.repeat(np.arange(frames_num, dtype=int), 25),
                     rep_3d_joints_x,
                     rep_3d_joints_y,
                     rep_3d_joints_z,
-                    np.repeat(np.arange(frames_num, dtype=int), 25),
                     np.full_like(rep_3d_joints_x, label, dtype="<U15"),
                 ]
             ).T
@@ -93,7 +151,7 @@ class Processor:
                 [
                     final_reps_df,
                     pd.DataFrame(
-                        final_rep, columns=["rep", "x", "y", "z", "frame", "label"]
+                        final_rep, columns=["rep", "frame", "x", "y", "z", "label"]
                     ),
                 ],
                 axis=0,
@@ -103,3 +161,17 @@ class Processor:
         final_reps_df["frame"] = final_reps_df["frame"].astype("int")
 
         return final_reps_df
+
+    @staticmethod
+    def __calculate_3D_angle(A: np.ndarray, B: np.ndarray, C: np.ndarray) -> float:
+        if not (A.shape == B.shape == C.shape == (3,)):
+            raise ValueError("Input arrays must all be of shape (3,).")
+
+        ba = A - B
+        bc = C - B
+
+        cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
+        cosine_angle = np.clip(cosine_angle, -1, 1)
+        angle = np.arccos(cosine_angle)
+
+        return np.degrees(angle)
