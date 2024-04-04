@@ -1,6 +1,7 @@
 import logging
 
 import torch
+from torch import nn
 from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
@@ -23,7 +24,10 @@ class Trainer:
         self.optimizer = optimizer
         self.device = device
 
-    def train(self, num_epochs: int = 10) -> list[dict[str, float]]:
+    def train_classifier(
+        self, num_epochs: int = 100, weights_path: str = "models/model.pt"
+    ) -> list[dict[str, float]]:
+        early_stopper = EarlyStopper(patience=50)
         learning_results = []
         self.model.to(self.device)
         for epoch in range(num_epochs):
@@ -38,17 +42,23 @@ class Trainer:
 
                 self.optimizer.step()
 
-            results = self.validate()
+            results = self.validate_classifier()
             logger.info(
                 f"Epoch {epoch+1}/{num_epochs}: "
                 f"Train Loss: {results['train_loss']:.4f}, Train Acc: {results['train_acc']:.4f}, "
                 f"Val Loss: {results['val_loss']:.4f}, Val Acc: {results['val_acc']:.4f}"
             )
-
             learning_results.append(results)
+
+            if early_stopper(results["train_loss"], self.model):
+                logger.warning("Eary stopping the training!")
+                break
+
+        early_stopper.save_model(weights_path)
+        logger.info(f"Best model saved in {weights_path}")
         return learning_results
 
-    def validate(self) -> tuple[torch.Tensor, torch.Tensor]:
+    def validate_classifier(self) -> tuple[torch.Tensor, torch.Tensor]:
         results = {}
         self.model.eval()
         with torch.no_grad():
@@ -73,26 +83,65 @@ class Trainer:
 
         return results
 
+    def train_autoencoder(
+        self, num_epochs: int = 100, weights_path: str = "models/model.pt"
+    ) -> list[dict[str, float]]:
+        early_stopper = EarlyStopper(patience=50)
+        learning_results = []
+        self.model.to(self.device)
+        for epoch in range(num_epochs):
+            self.model.train()
+            losses = 0
+            for inputs, _, _ in tqdm(self.train_loader):
+                inputs = inputs.to(self.device)
+                self.optimizer.zero_grad()
+                outputs = self.model(inputs)
+                loss = self.loss_fn(outputs, inputs)
+                loss.backward()
+                losses += loss.item()
+
+                self.optimizer.step()
+            if epoch % 10 == 0:
+                print(outputs[0][:10], inputs[0][:10])
+            logger.info(f"Epoch {epoch+1}/{num_epochs}: " f"Train Loss: {losses}")
+            learning_results.append({"train_loss": losses})
+
+            if early_stopper(losses, self.model):
+                logger.warning("Eary stopping the training!")
+                break
+
+        early_stopper.save_model(weights_path)
+        logger.info(f"Best model saved in {weights_path}")
+        return learning_results
+
     @staticmethod
     def __count_correct(y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
         preds = torch.argmax(y_pred, dim=1)
         return ((preds == y_true).float()).sum()
 
-        x_packed = pack_padded_sequence(
-            x, lengths, batch_first=True, enforce_sorted=False
-        )
-        out, _ = self.lstm(x_packed)
-        out = pad_packed_sequence(out, batch_first=True)
-        out = self.fc(out[-1, :, :])
-        out = self.softmax(out)
-        return out
-        # x_packed = pack_padded_sequence(
-        #     x, lengths, batch_first=True, enforce_sorted=False
-        # )
-        # out, _ = self.lstm(x_packed)
-        # out = pad_packed_sequence(out, batch_first=True)
-        # print(out.shape)
 
-        # out = self.fc(out[-1, :, :])
-        # out = self.softmax(out)
-        # return out
+class EarlyStopper:
+    def __init__(self, patience: int = 10, delta: float = 0.0005) -> None:
+        self.best_score = None
+        self.best_model = None
+        self.patience = patience
+        self.delta = delta
+        self.counter = 0
+        self.best_model = None
+
+    def __call__(self, train_loss: float, model: nn.Module) -> bool:
+        if self.best_score is None:
+            self.best_score = train_loss
+            self.best_model = model
+        elif train_loss > self.best_score - self.delta:
+            self.counter += 1
+            if self.counter >= self.patience:
+                return True
+        else:
+            self.best_score = train_loss
+            self.best_model = model
+            self.counter = 0
+        return False
+
+    def save_model(self, path):
+        torch.save(self.best_model.state_dict(), path)

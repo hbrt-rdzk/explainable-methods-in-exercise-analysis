@@ -3,6 +3,7 @@ import torch
 from sklearn.preprocessing import LabelEncoder
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset
+from tslearn.preprocessing import TimeSeriesResampler
 
 POSITION_FEATURES = ["x", "y", "z"]
 ANGLE_FEATUERES = [
@@ -13,6 +14,7 @@ ANGLE_FEATUERES = [
     "left_hip",
     "right_hip",
 ]
+TIME_SERIES_LENGTH = 75
 
 
 class ExerciseDataset(Dataset):
@@ -54,5 +56,17 @@ class ExerciseDataset(Dataset):
         original_lengths = [len(seq) for seq in data]
 
         data = pad_sequence(data, batch_first=True)
+        labels = torch.stack(labels)
+        return data, labels, original_lengths
+
+    @staticmethod
+    def resample_batch(
+        batch: list[list[torch.Tensor], torch.Tensor, int]
+    ) -> list[torch.Tensor, torch.Tensor, list[int]]:
+        resampler = TimeSeriesResampler(sz=TIME_SERIES_LENGTH)
+        data, labels = zip(*batch)
+        original_lengths = [len(seq) for seq in data]
+
+        data = torch.tensor(resampler.fit_transform(data)).float()
         labels = torch.stack(labels)
         return data, labels, original_lengths
