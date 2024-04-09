@@ -92,7 +92,7 @@ class Trainer:
         for epoch in range(num_epochs):
             self.model.train()
             losses = 0
-            for inputs, _, _ in tqdm(self.train_loader):
+            for inputs, _ in tqdm(self.train_loader):
                 inputs = inputs.to(self.device)
                 self.optimizer.zero_grad()
                 outputs = self.model(inputs)
@@ -102,8 +102,7 @@ class Trainer:
 
                 self.optimizer.step()
             if epoch % 10 == 0:
-                print(outputs[0][:10], inputs[0][:10])
-            logger.info(f"Epoch {epoch+1}/{num_epochs}: " f"Train Loss: {losses}")
+                logger.info(f"Epoch {epoch+1}/{num_epochs}: " f"Train Loss: {losses}")
             learning_results.append({"train_loss": losses})
 
             if early_stopper(losses, self.model):

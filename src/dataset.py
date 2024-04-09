@@ -19,7 +19,7 @@ TIME_SERIES_LENGTH = 75
 
 class ExerciseDataset(Dataset):
     def __init__(self, exercise_data: pd.DataFrame, representation: str = "joints"):
-        if representation == "joints":
+        if representation in ("joints", "dct"):
             feature_names = POSITION_FEATURES
         elif representation == "angles":
             feature_names = ANGLE_FEATUERES

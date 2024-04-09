@@ -12,6 +12,7 @@ class LSTMClassifier(nn.Module):
         self.num_layers = num_layers
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
         self.fc = nn.Linear(hidden_size, num_classes)
+        self.dropput = nn.Dropout(0.3)
         self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x: torch.Tensor, lengths: list[int] = None):
@@ -19,5 +20,6 @@ class LSTMClassifier(nn.Module):
         _, (hidden_state, _) = self.lstm(x)
         output = hidden_state[-1, :, :]
         output = self.fc(output)
+        output = self.dropput(output)
         output = self.softmax(output)
         return output
