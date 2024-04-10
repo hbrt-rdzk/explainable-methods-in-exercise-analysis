@@ -1,8 +1,12 @@
+import os
+
+import numpy as np
 import pandas as pd
 import torch
 from sklearn.preprocessing import LabelEncoder
+from torch import nn
 from torch.nn.utils.rnn import pad_sequence
-from torch.utils.data import Dataset
+from torch.utils.data import DataLoader, Dataset
 from tslearn.preprocessing import TimeSeriesResampler
 
 POSITION_FEATURES = ["x", "y", "z"]
@@ -14,7 +18,7 @@ ANGLE_FEATUERES = [
     "left_hip",
     "right_hip",
 ]
-TIME_SERIES_LENGTH = 75
+MEAN_TIME_SERIES_LENGTH = 75
 
 
 class ExerciseDataset(Dataset):
@@ -63,7 +67,7 @@ class ExerciseDataset(Dataset):
     def resample_batch(
         batch: list[list[torch.Tensor], torch.Tensor, int]
     ) -> list[torch.Tensor, torch.Tensor, list[int]]:
-        resampler = TimeSeriesResampler(sz=TIME_SERIES_LENGTH)
+        resampler = TimeSeriesResampler(sz=MEAN_TIME_SERIES_LENGTH)
         data, labels = zip(*batch)
         original_lengths = [len(seq) for seq in data]
 

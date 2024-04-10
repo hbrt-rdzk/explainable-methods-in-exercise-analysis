@@ -1,8 +1,10 @@
+import logging
 import os
 
 import numpy as np
 import pandas as pd
 from scipy.fft import dct
+from sklearn.model_selection import train_test_split
 
 LABELS_COLUMNS = ["exercise", "subject", "label", "rep", "frame"]
 
@@ -51,6 +53,8 @@ OPENPOSE_ANGLES = {
     "right_hip": [10, 9, 2],
 }
 
+logger = logging.getLogger(__name__)
+
 
 class Processor:
     def __init__(self, dataset: dict):
@@ -73,19 +77,41 @@ class Processor:
             (plank_df, PLANK_LABELS),
         ]:
             exercise_name = df["exercise"].values[0].lower()
-
-            joints_data = self.__process_joints(df, labels)
-            self.save_data(
-                joints_data, os.path.join(output_dir, "joints"), exercise_name
+            logger.info(f"Processing {exercise_name} exercise...")
+            reps = []
+            for _, rep in df.groupby(["label", "rep", "subject"]):
+                reps.append(rep)
+            train, test = train_test_split(
+                reps, train_size=0.8, shuffle=True, random_state=42
             )
+            train_df, test_df = pd.concat(train), pd.concat(test)
 
-            angles_data = self.__process_angles(joints_data)
-            self.save_data(
-                angles_data, os.path.join(output_dir, "angles"), exercise_name
-            )
+            for dataset_name, df in {"train": train_df, "test": test_df}.items():
+                logger.info(f"Processing {dataset_name} joints...")
+                joints_data = self.__process_joints(df, labels)
+                self.save_data(
+                    joints_data,
+                    os.path.join(output_dir, dataset_name, "joints"),
+                    exercise_name,
+                )
 
-            dct_data = self.__process_dct(joints_data)
-            self.save_data(dct_data, os.path.join(output_dir, "dct"), exercise_name)
+                logger.info(f"Processing {dataset_name} angles...")
+                angles_data = self.__process_angles(joints_data)
+                self.save_data(
+                    angles_data,
+                    os.path.join(output_dir, dataset_name, "angles"),
+                    exercise_name,
+                )
+
+                logger.info(f"Processing {dataset_name} dct coefficients...")
+                dct_data = self.__process_dct(joints_data)
+                self.save_data(
+                    dct_data,
+                    os.path.join(output_dir, dataset_name, "dct"),
+                    exercise_name,
+                )
+
+        logger.info(f"Processed succesfully. Data saved in {output_dir}")
 
     @staticmethod
     def save_data(data: pd.DataFrame, output_dir: str, exercise_name: str) -> None:
@@ -200,7 +226,6 @@ class Processor:
                 ],
                 axis=0,
             )
-
         final_reps_df["rep"] = final_reps_df["rep"].astype("int")
         final_reps_df["frame"] = final_reps_df["frame"].astype("int")
 

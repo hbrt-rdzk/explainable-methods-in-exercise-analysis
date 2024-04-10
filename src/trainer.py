@@ -1,13 +1,18 @@
 import logging
+import os
+import pickle as pkl
 
+import numpy as np
 import torch
+from sklearn.base import BaseEstimator
+from sklearn.metrics import classification_report
 from torch import nn
 from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
 
-class Trainer:
+class AutoEncoderTrainer:
     def __init__(
         self,
         model,
@@ -24,66 +29,7 @@ class Trainer:
         self.optimizer = optimizer
         self.device = device
 
-    def train_classifier(
-        self, num_epochs: int = 100, weights_path: str = "models/model.pt"
-    ) -> list[dict[str, float]]:
-        early_stopper = EarlyStopper(patience=50)
-        learning_results = []
-        self.model.to(self.device)
-        for epoch in range(num_epochs):
-            self.model.train()
-            for inputs, labels, original_lengths in tqdm(self.train_loader):
-                inputs, labels = inputs.to(self.device), labels.to(self.device)
-                self.optimizer.zero_grad()
-
-                outputs = self.model(inputs, original_lengths)
-                loss = self.loss_fn(outputs, labels)
-                loss.backward()
-
-                self.optimizer.step()
-
-            results = self.validate_classifier()
-            logger.info(
-                f"Epoch {epoch+1}/{num_epochs}: "
-                f"Train Loss: {results['train_loss']:.4f}, Train Acc: {results['train_acc']:.4f}, "
-                f"Val Loss: {results['val_loss']:.4f}, Val Acc: {results['val_acc']:.4f}"
-            )
-            learning_results.append(results)
-
-            if early_stopper(results["train_loss"], self.model):
-                logger.warning("Eary stopping the training!")
-                break
-
-        early_stopper.save_model(weights_path)
-        logger.info(f"Best model saved in {weights_path}")
-        return learning_results
-
-    def validate_classifier(self) -> tuple[torch.Tensor, torch.Tensor]:
-        results = {}
-        self.model.eval()
-        with torch.no_grad():
-            results = {}
-            for dataloader in [self.train_loader, self.val_loader]:
-                loss = 0
-                correct = 0
-                total = 0
-
-                for batch, labels, lengths in dataloader:
-                    preds = self.model(batch, lengths)
-                    loss += self.loss_fn(preds, labels).sum()
-                    correct += self.__count_correct(preds, labels)
-                    total += labels.size(0)
-
-                if dataloader is self.train_loader:
-                    results["train_loss"] = loss / total
-                    results["train_acc"] = correct / total
-                else:
-                    results["val_loss"] = loss / total
-                    results["val_acc"] = correct / total
-
-        return results
-
-    def train_autoencoder(
+    def train(
         self, num_epochs: int = 100, weights_path: str = "models/model.pt"
     ) -> list[dict[str, float]]:
         early_stopper = EarlyStopper(patience=50)
@@ -101,10 +47,14 @@ class Trainer:
                 losses += loss.item()
 
                 self.optimizer.step()
-            if epoch % 10 == 0:
-                logger.info(f"Epoch {epoch+1}/{num_epochs}: " f"Train Loss: {losses}")
-            learning_results.append({"train_loss": losses})
 
+            val_loss = self.evaluate()
+            logger.info(
+                f"Epoch {epoch+1}/{num_epochs}: "
+                f"Val Loss: {val_loss}, Train Loss: {losses}"
+            )
+
+            learning_results.append({"train_loss": losses, "val_loss": val_loss})
             if early_stopper(losses, self.model):
                 logger.warning("Eary stopping the training!")
                 break
@@ -113,10 +63,16 @@ class Trainer:
         logger.info(f"Best model saved in {weights_path}")
         return learning_results
 
-    @staticmethod
-    def __count_correct(y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
-        preds = torch.argmax(y_pred, dim=1)
-        return ((preds == y_true).float()).sum()
+    def evaluate(self) -> float:
+        self.model.eval()
+        losses = 0
+        with torch.no_grad():
+            for inputs, _ in self.val_loader:
+                inputs = inputs.to(self.device)
+                outputs = self.model(inputs)
+                loss = self.loss_fn(outputs, inputs)
+                losses += loss.item()
+        return losses
 
 
 class EarlyStopper:
@@ -126,7 +82,6 @@ class EarlyStopper:
         self.patience = patience
         self.delta = delta
         self.counter = 0
-        self.best_model = None
 
     def __call__(self, train_loss: float, model: nn.Module) -> bool:
         if self.best_score is None:
@@ -144,3 +99,32 @@ class EarlyStopper:
 
     def save_model(self, path):
         torch.save(self.best_model.state_dict(), path)
+
+
+class ClassifierTrainer:
+    def __init__(
+        self,
+        estimator: BaseEstimator,
+        train_data: np.ndarray,
+        test_data: np.ndarray,
+        train_labels: list,
+        test_labels: list,
+    ) -> None:
+        self.estimator = estimator()
+        self.train_data = train_data
+        self.test_data = test_data
+        self.train_labels = train_labels
+        self.test_labels = test_labels
+
+    def train(self):
+        binary_train_labels = [1 if label == 0 else 0 for label in self.train_labels]
+        binary_test_labels = [1 if label == 0 else 0 for label in self.test_labels]
+        self.estimator.fit(self.train_data, binary_train_labels)
+        self.predictions = self.estimator.predict(self.test_data)
+        logger.info(
+            f"Test data results: {classification_report(binary_test_labels, self.predictions)}"
+        )
+
+    def save(self, path: str) -> None:
+        pkl.dump(self.estimator, open(os.path.join(path, "clf.pkl"), "wb"))
+        logger.info(f"Classifier saved in {path}")
