@@ -22,7 +22,7 @@ MEAN_TIME_SERIES_LENGTH = 75
 
 
 class ExerciseDataset(Dataset):
-    def __init__(self, exercise_data: pd.DataFrame, representation: str = "joints"):
+    def __init__(self, exercise_data: pd.DataFrame, representation: str = "dct"):
         if representation in ("joints", "dct"):
             feature_names = POSITION_FEATURES
         elif representation == "angles":
@@ -32,7 +32,9 @@ class ExerciseDataset(Dataset):
 
         self.labels = []
         self.data = []
+        self.lengths = []
         for _, rep in exercise_data.groupby(["rep", "label"]):
+            self.lengths.append(rep["length"].values[0])
             self.labels.append(rep["label"].values[0])
             ts = []
             for _, frame in rep.groupby("frame"):
@@ -50,7 +52,7 @@ class ExerciseDataset(Dataset):
         return len(self.labels)
 
     def __getitem__(self, idx):
-        return self.data[idx], self.labels_encoded[idx]
+        return self.data[idx], self.labels_encoded[idx], self.lengths[idx]
 
     @staticmethod
     def pad_batch(

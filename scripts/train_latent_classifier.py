@@ -6,9 +6,9 @@ from sklearn.metrics import classification_report
 from sklearn.tree import DecisionTreeClassifier
 from torch.utils.data import DataLoader
 
-from src.ae_architectures.lstm import LSTMAutoEncoder
 from src.trainer import ClassifierTrainer
 from src.utils.data import generate_latent_samples, get_data
+from src.vae_architectures.lstm import LSTMVariationalAutoEncoder
 
 NUM_JOINTS = 15
 SEQUENCE_LENGTH = 25
@@ -68,7 +68,7 @@ def main(args: argparse.Namespace) -> None:
     architecture_name = args.autoencoder.split(".")[0].split("/")[-1].split("_")[-1]
     match architecture_name.lower():
         case "lstm":
-            model = LSTMAutoEncoder(
+            model = LSTMVariationalAutoEncoder(
                 SEQUENCE_LENGTH, NUM_JOINTS * 3, HIDDEN_SIZE, LATENT_SIZE, NUM_LAYERS
             )
         case _:

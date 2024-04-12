@@ -8,8 +8,9 @@ import pandas as pd
 import torch
 from sklearn.base import BaseEstimator
 
-from src.ae_architectures.lstm import LSTMAutoEncoder
-from src.utils.data import generate_latent_samples, get_data
+from src.utils.data import decode_dct, generate_latent_samples, get_data
+from src.vae_architectures.lstm import LSTMVariationalAutoEncoder
+from utils.visualization import get_3D_animation
 
 warnings.filterwarnings(
     "ignore", category=UserWarning, message=".*X has feature names.*"
@@ -47,6 +48,12 @@ def parse_args() -> argparse.Namespace:
         help="Exercise to train the model on",
     )
     parser.add_argument(
+        "--sample_num",
+        type=int,
+        default=1,
+        help="Sample number to explain",
+    )
+    parser.add_argument(
         "--representation",
         type=str,
         choices=["joints", "angles", "dct"],
@@ -68,7 +75,9 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def explain(clf: BaseEstimator, data: np.ndarray, labels: list) -> torch.Tensor:
+def explain(
+    clf: BaseEstimator, data: np.ndarray, labels: list, sample_num: int = 1
+) -> tuple[torch.Tensor, torch.Tensor]:
     train_df = pd.DataFrame(data)
     train_df = train_df.rename(str, axis="columns")
     features = list(train_df.columns)
@@ -80,13 +89,16 @@ def explain(clf: BaseEstimator, data: np.ndarray, labels: list) -> torch.Tensor:
     )
     exp = dice_ml.Dice(d, m)
 
-    query_instance = train_df.iloc[[1], :-1]
+    query_instance = train_df.iloc[[sample_num], :-1]
     explanation = exp.generate_counterfactuals(
-        query_instance, total_CFs=1, desired_class="opposite"
+        query_instance, total_CFs=1, desired_class="opposite", stopping_threshold=0.99
     )
-    return torch.tensor(
-        explanation.cf_examples_list[0].final_cfs_df.values[:, :-1]
-    ).float()
+    return (
+        torch.tensor(query_instance.values),
+        torch.tensor(
+            explanation.cf_examples_list[0].final_cfs_df.values[:, :-1]
+        ).float(),
+    )
 
 
 def main(args: argparse.Namespace) -> None:
@@ -96,7 +108,7 @@ def main(args: argparse.Namespace) -> None:
     architecture_name = args.autoencoder.split(".")[0].split("/")[-1].split("_")[-1]
     match architecture_name.lower():
         case "lstm":
-            ae = LSTMAutoEncoder(
+            ae = LSTMVariationalAutoEncoder(
                 SEQUENCE_LENGTH, NUM_JOINTS * 3, HIDDEN_SIZE, LATENT_SIZE, NUM_LAYERS
             )
         case _:
@@ -114,8 +126,15 @@ def main(args: argparse.Namespace) -> None:
     binary_train_labels = np.array(
         [1 if label == 0 else 0 for label in train_dl.dataset.labels_encoded]
     )
-    fixed_sample = explain(clf, latent_train_data, binary_train_labels)
-    dct_sample = ae.decoder(fixed_sample)
+    latent_sample, latent_fixed_sample = explain(
+        clf, latent_train_data, binary_train_labels, args.sample_num
+    )
+    dct_sample = ae.decoder(latent_sample)
+    dct_fixed_sample = ae.decoder(latent_fixed_sample)
+
+    fixed_sample = decode_dct(dct_fixed_sample, train_dl.dataset.lengths[1])
+    anim = get_3D_animation(fixed_sample)
+    anim.save("sample.mp4", writer="ffmpeg")
 
 
 if __name__ == "__main__":

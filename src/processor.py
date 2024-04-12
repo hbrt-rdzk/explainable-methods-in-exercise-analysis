@@ -172,6 +172,7 @@ class Processor:
                 dct_coefficients = np.arange(0, dct_x.shape[0], dtype=int)
                 labels = np.full_like(dct_x, label, dtype="<U15")
                 joint_names = np.full_like(dct_x, joint_name, dtype="<U15")
+                length = np.full_like(dct_x, len(joint_data), dtype=int)
 
                 dct_data.append(
                     pd.DataFrame(
@@ -183,6 +184,7 @@ class Processor:
                             "z": dct_z,
                             "joint_name": joint_names,
                             "label": labels,
+                            "length": length,
                         }
                     )
                 )

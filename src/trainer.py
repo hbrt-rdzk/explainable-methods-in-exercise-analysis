@@ -12,7 +12,7 @@ from tqdm import tqdm
 logger = logging.getLogger(__name__)
 
 
-class AutoEncoderTrainer:
+class VariationalAutoEncoderTrainer:
     def __init__(
         self,
         model,
@@ -38,11 +38,17 @@ class AutoEncoderTrainer:
         for epoch in range(num_epochs):
             self.model.train()
             losses = 0
-            for inputs, _ in tqdm(self.train_loader):
+            for inputs, _, _ in tqdm(self.train_loader):
                 inputs = inputs.to(self.device)
                 self.optimizer.zero_grad()
-                outputs = self.model(inputs)
-                loss = self.loss_fn(outputs, inputs)
+                outputs, means, log_vars = self.model(inputs)
+
+                base_loss = self.loss_fn(outputs, inputs)
+                kld_loss = -0.5 * torch.sum(
+                    1 + log_vars - means.pow(2) - log_vars.exp()
+                )
+                loss = base_loss + kld_loss
+
                 loss.backward()
                 losses += loss.item()
 
@@ -67,10 +73,14 @@ class AutoEncoderTrainer:
         self.model.eval()
         losses = 0
         with torch.no_grad():
-            for inputs, _ in self.val_loader:
+            for inputs, _, _ in self.val_loader:
                 inputs = inputs.to(self.device)
-                outputs = self.model(inputs)
-                loss = self.loss_fn(outputs, inputs)
+                outputs, means, log_vars = self.model(inputs)
+                base_loss = self.loss_fn(outputs, inputs)
+                kld_loss = -0.5 * torch.sum(
+                    1 + log_vars - means.pow(2) - log_vars.exp()
+                )
+                loss = base_loss + kld_loss
                 losses += loss.item()
         return losses
 
