@@ -6,6 +6,7 @@ from src.utils.constants import ANGLES_FEATURES
 
 
 def get_dtw_score(reference: pd.DataFrame, query: pd.DataFrame, exercise: str) -> float:
+    """Calculate dtw score between two signals"""
     features = get_features(exercise)
     return dtw(reference[features], query[features])
 
@@ -13,6 +14,7 @@ def get_dtw_score(reference: pd.DataFrame, query: pd.DataFrame, exercise: str) -
 def get_dtw_indexes(
     reference: pd.DataFrame, query: pd.DataFrame, exercise: str
 ) -> np.ndarray:
+    """Return warped dtw from query to reference"""
     features = get_features(exercise)
     path, _ = dtw_path(reference[features], query[features])
     path = np.array(path)
@@ -26,6 +28,7 @@ def get_dtw_indexes(
 def filter_repetable_reference_indexes(
     referene_to_query: np.ndarray, query_to_refernce: np.ndarray
 ) -> np.ndarray:
+    """Filter repeateble indexes and return new list"""
     query_to_refernce_cp = query_to_refernce.copy()
 
     for idx in range(len(referene_to_query) - 1, -1, -1):
@@ -36,6 +39,7 @@ def filter_repetable_reference_indexes(
 
 
 def get_features(exercise: str) -> list[str]:
+    """Return important features for desired exercise"""
     match exercise:
         case "squat":
             return ANGLES_FEATURES.SQUAT_ANGLES.value

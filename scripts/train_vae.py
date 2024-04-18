@@ -3,7 +3,7 @@ import os
 
 import torch
 
-from src.deep_models.vae_lstm import LSTMVariationalAutoEncoder
+from src.vae_architectures.lstm import LSTMVariationalAutoEncoder
 from src.trainer import VariationalAutoEncoderTrainer
 from src.utils.data import get_data
 

@@ -2,6 +2,7 @@ import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from src.utils.constants import COLORS, OPENPOSE_CONNECTIONS
 
 X_LIM = (-0.4, 0.4)
 Y_LIM = (-0.4, 0.4)
@@ -10,30 +11,9 @@ Z_LIM = (-0.4, 0.4)
 ELEV = 28
 AZIM = 45
 
-OPENPOSE_CONNECTIONS = [
-    (0, 1),
-    (1, 2),
-    (1, 5),
-    (1, 8),
-    (2, 3),
-    (3, 4),
-    (5, 6),
-    (6, 7),
-    (8, 9),
-    (9, 10),
-    (10, 11),
-    (8, 12),
-    (12, 13),
-    (13, 14),
-]
-
-COLORS = [
-    "red",
-    "blue",
-]
-
 
 def get_3D_animation(data: torch.Tensor, color: str = "red") -> animation.FuncAnimation:
+    """Return animation of the joints representation in time"""
     data = data.reshape(-1, 15, 3)
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
@@ -68,6 +48,7 @@ def get_3D_animation(data: torch.Tensor, color: str = "red") -> animation.FuncAn
 def get_3D_animation_comparison(
     data_ref: np.ndarray, data_query: np.ndarray
 ) -> animation.FuncAnimation:
+    """Return animation of incorrect and fixed joints representations in time"""
     data_ref = data_ref.reshape(-1, 15, 3)
     data_query = data_query.reshape(-1, 15, 3)
 

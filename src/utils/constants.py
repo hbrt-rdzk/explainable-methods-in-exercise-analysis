@@ -1,5 +1,12 @@
 from enum import Enum
 
+
+class ANGLES_FEATURES(Enum):
+    SQUAT_ANGLES = ["left_knee", "right_knee", "left_hip", "right_hip"]
+    LUNGES_ANGLES = ["left_knee", "right_knee", "left_hip", "right_hip"]
+    PLANK_ANGLES = ["left_knee", "right_knee", "left_hip", "right_hip"]
+
+
 SQUAT_LABELS = {
     1: "correct",
     2: "feet_too_wide",
@@ -59,7 +66,24 @@ ANGLE_FEATUERES = [
 MEAN_TIME_SERIES_LENGTH = 75
 
 
-class ANGLES_FEATURES(Enum):
-    SQUAT_ANGLES = ["left_knee", "right_knee", "left_hip", "right_hip"]
-    LUNGES_ANGLES = ["left_knee", "right_knee", "left_hip", "right_hip"]
-    PLANK_ANGLES = ["left_knee", "right_knee", "left_hip", "right_hip"]
+OPENPOSE_CONNECTIONS = [
+    (0, 1),
+    (1, 2),
+    (1, 5),
+    (1, 8),
+    (2, 3),
+    (3, 4),
+    (5, 6),
+    (6, 7),
+    (8, 9),
+    (9, 10),
+    (10, 11),
+    (8, 12),
+    (12, 13),
+    (13, 14),
+]
+
+COLORS = [
+    "red",
+    "blue",
+]

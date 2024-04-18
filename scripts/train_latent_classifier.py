@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from sklearn.tree import DecisionTreeClassifier
 
-from src.deep_models.vae_lstm import LSTMVariationalAutoEncoder
+from src.vae_architectures.lstm import LSTMVariationalAutoEncoder
 from src.trainer import ClassifierTrainer
 from src.utils.data import encode_samples_to_latent, get_data
 

@@ -10,6 +10,7 @@ from src.utils.constants import (ANGLE_FEATUERES, MEAN_TIME_SERIES_LENGTH,
 
 
 class ExerciseDataset(Dataset):
+    """This class implements custom input for PyTorch's DataLoader"""
     def __init__(self, exercise_data: pd.DataFrame, representation: str = "dct"):
         if representation in ("joints", "dct"):
             feature_names = POSITION_FEATURES
@@ -37,15 +38,18 @@ class ExerciseDataset(Dataset):
         )
 
     def __len__(self):
+        """Length of the dataset"""
         return len(self.labels)
 
     def __getitem__(self, idx):
+        """Get data, encoded label and length of the indexed sample"""
         return self.data[idx], self.labels_encoded[idx], self.lengths[idx]
 
     @staticmethod
     def pad_batch(
         batch: list[list[torch.Tensor], torch.Tensor, int]
     ) -> list[torch.Tensor, torch.Tensor, list[int]]:
+        """Pad batch to the longest element in batch with zeros"""
         data, labels = zip(*batch)
         original_lengths = [len(seq) for seq in data]
 
@@ -57,6 +61,7 @@ class ExerciseDataset(Dataset):
     def resample_batch(
         batch: list[list[torch.Tensor], torch.Tensor, int]
     ) -> list[torch.Tensor, torch.Tensor, list[int]]:
+        """Use interpolation to resample elements in batch to desired length"""
         resampler = TimeSeriesResampler(sz=MEAN_TIME_SERIES_LENGTH)
         data, labels = zip(*batch)
         original_lengths = [len(seq) for seq in data]

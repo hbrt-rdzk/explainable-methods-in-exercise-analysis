@@ -15,6 +15,7 @@ from src.utils.constants import DCT_COEFFICIENTS_SIZE
 def get_data(
     dir: str, representation: str, exercise: str, batch_size: int = 8
 ) -> DataLoader:
+    """Get dataloaders from csv file"""
     train_df = pd.read_csv(
         os.path.join(dir, "train", representation, exercise + ".csv")
     )
@@ -37,6 +38,7 @@ def get_data(
 
 
 def get_random_sample(dl: DataLoader, desired_label: int) -> tuple[torch.Tensor, int]:
+    """Return random sample with desired label"""
     label = None
     dl_length = len(dl)
     while label != desired_label:
@@ -47,6 +49,7 @@ def get_random_sample(dl: DataLoader, desired_label: int) -> tuple[torch.Tensor,
 
 
 def joints_rep_df_to_numpy(x: pd.DataFrame) -> np.ndarray:
+    """Convert joints_df of one repetition to numpy array"""
     joints = []
     for _, frame in x.groupby("frame"):
         joints.append(frame[["x", "y", "z"]])
@@ -54,6 +57,7 @@ def joints_rep_df_to_numpy(x: pd.DataFrame) -> np.ndarray:
 
 
 def get_angles_from_joints(joints: np.ndarray, angles_formula: dict) -> pd.DataFrame:
+    """Convert numpy array with joints to angle features"""
     angles = {}
     for angle_name, angle_joints in angles_formula.items():
         angles[angle_name] = []
@@ -65,6 +69,7 @@ def get_angles_from_joints(joints: np.ndarray, angles_formula: dict) -> pd.DataF
 
 
 def calculate_3D_angle(A: np.ndarray, B: np.ndarray, C: np.ndarray) -> float:
+    """Calculate angle between 3 points in 3D space"""
     if not (A.shape == B.shape == C.shape == (3,)):
         raise ValueError("Input arrays must all be of shape (3,).")
 

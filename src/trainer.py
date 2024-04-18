@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class VariationalAutoEncoderTrainer:
+    """Trainer of all Variational Autoencoder classes"""
     def __init__(
         self,
         model,
@@ -32,6 +33,7 @@ class VariationalAutoEncoderTrainer:
     def train(
         self, num_epochs: int = 100, weights_path: str = "models/model.pt"
     ) -> list[dict[str, float]]:
+        """Train variational Autoencoder"""
         early_stopper = EarlyStopper(patience=50)
         learning_results = []
         self.model.to(self.device)
@@ -70,6 +72,7 @@ class VariationalAutoEncoderTrainer:
         return learning_results
 
     def evaluate(self) -> float:
+        """Evaluate Variational Autoencoder on validation dataset"""
         self.model.eval()
         losses = 0
         with torch.no_grad():
@@ -86,6 +89,7 @@ class VariationalAutoEncoderTrainer:
 
 
 class EarlyStopper:
+    """Early stop training if loss is not descending"""
     def __init__(self, patience: int = 10, delta: float = 0.0005) -> None:
         self.best_score = None
         self.best_model = None
@@ -108,10 +112,12 @@ class EarlyStopper:
         return False
 
     def save_model(self, path):
+        """Save best model to dessired path"""
         torch.save(self.best_model.state_dict(), path)
 
 
 class ClassifierTrainer:
+    """Trainer of the Sklearn's classification model"""
     def __init__(
         self,
         estimator: BaseEstimator,
@@ -127,6 +133,7 @@ class ClassifierTrainer:
         self.test_labels = test_labels
 
     def train(self):
+        """Train classifier on the latent space"""
         binary_train_labels = [1 if label == 0 else 0 for label in self.train_labels]
         binary_test_labels = [1 if label == 0 else 0 for label in self.test_labels]
         self.estimator.fit(self.train_data, binary_train_labels)
@@ -136,5 +143,6 @@ class ClassifierTrainer:
         )
 
     def save(self, path: str) -> None:
+        """Save classificaiton model"""
         pkl.dump(self.estimator, open(os.path.join(path, "clf.pkl"), "wb"))
         logger.info(f"Classifier saved in {path}")

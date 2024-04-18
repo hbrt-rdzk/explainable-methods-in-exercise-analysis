@@ -10,6 +10,9 @@ from src.utils.data import decode_samples_from_latent, encode_samples_to_latent
 
 
 class Explainer:
+    """This class implements functionality of explaining user's 
+    mistakes during exercise performance
+    """
     def __init__(
         self, autoencoder: nn.Module, classifier: BaseEstimator, dl: DataLoader
     ) -> None:
@@ -25,6 +28,7 @@ class Explainer:
         )
 
     def generate_cf(self, query: np.ndarray) -> np.ndarray:
+        """Generate CounterFactual perputation to the provided query sample"""
         train_df = pd.DataFrame(self.latent_train_data)
         train_df = train_df.rename(str, axis="columns")
         features = list(train_df.columns)
