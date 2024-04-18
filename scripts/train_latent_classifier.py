@@ -4,10 +4,9 @@ import numpy as np
 import torch
 from sklearn.metrics import classification_report
 from sklearn.tree import DecisionTreeClassifier
-from torch.utils.data import DataLoader
 
 from src.trainer import ClassifierTrainer
-from src.utils.data import generate_latent_samples, get_data
+from src.utils.data import encode_samples_to_latent, get_data
 from src.vae_architectures.lstm import LSTMVariationalAutoEncoder
 
 NUM_JOINTS = 15
@@ -52,18 +51,12 @@ def parse_args() -> argparse.Namespace:
         default="data",
         help="Directory where the dataset is stored",
     )
-    parser.add_argument(
-        "--batch_size",
-        type=int,
-        default=8,
-        help="Batch size for training",
-    )
     return parser.parse_args()
 
 
 def main(args: argparse.Namespace) -> None:
     train_dl, val_dl = get_data(
-        args.dataset_dir, args.representation, args.exercise, args.batch_size
+        args.dataset_dir, args.representation, args.exercise
     )
     architecture_name = args.autoencoder.split(".")[0].split("/")[-1].split("_")[-1]
     match architecture_name.lower():
@@ -75,8 +68,12 @@ def main(args: argparse.Namespace) -> None:
             raise ValueError("Model name not supported")
 
     model.load_state_dict(torch.load(args.autoencoder))
-    latent_train_data = generate_latent_samples(model, train_dl)
-    latent_test_data = generate_latent_samples(model, val_dl)
+    latent_train_data = (
+        encode_samples_to_latent(model, train_dl.dataset.data).detach().numpy()
+    )
+    latent_test_data = (
+        encode_samples_to_latent(model, val_dl.dataset.data).detach().numpy()
+    )
 
     train_labels, test_labels = (
         train_dl.dataset.labels_encoded.numpy(),

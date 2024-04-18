@@ -43,7 +43,7 @@ class LSTMEncoder(nn.Module):
         log_var = self.distribution_var(output)
 
         z = self.reparameterization_trick(mean, log_var)
-        return z, mean, log_var
+        return output, mean, log_var
 
     def reparameterization_trick(
         self, mean: torch.Tensor, logvar: torch.Tensor

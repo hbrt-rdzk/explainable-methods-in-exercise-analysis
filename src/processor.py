@@ -3,8 +3,9 @@ import os
 
 import numpy as np
 import pandas as pd
-from scipy.fft import dct
 from sklearn.model_selection import train_test_split
+
+from utils.data import encode_dct
 
 LABELS_COLUMNS = ["exercise", "subject", "label", "rep", "frame"]
 
@@ -164,9 +165,9 @@ class Processor:
             for joint_name in OPENPOSE_JOINTS.values():
                 joint_data = rep_data[rep_data["joint_name"] == joint_name]
                 joint_data = joint_data.reset_index()
-                dct_x = dct(joint_data["x"].values, norm="ortho")[:25]
-                dct_y = dct(joint_data["y"].values, norm="ortho")[:25]
-                dct_z = dct(joint_data["z"].values, norm="ortho")[:25]
+                dct_x = encode_dct(joint_data["x"].values)
+                dct_y = encode_dct(joint_data["y"].values)
+                dct_z = encode_dct(joint_data["z"].values)
 
                 reps = np.full_like(dct_x, rep, dtype=int)
                 dct_coefficients = np.arange(0, dct_x.shape[0], dtype=int)

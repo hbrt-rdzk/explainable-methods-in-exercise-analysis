@@ -3,21 +3,30 @@ import os
 import numpy as np
 import pandas as pd
 import torch
-from scipy.fft import idct
+from scipy.fft import dct, idct
 from torch import nn
 from torch.utils.data import DataLoader
 
 from src.dataset import ExerciseDataset
 
+DCT_COEFFICIENTS_SIZE = 25
 
-def generate_latent_samples(model: nn.Module, data: DataLoader) -> np.ndarray:
+
+def encode_samples_to_latent(
+    model: nn.Module, data: list[torch.Tensor]
+) -> torch.Tensor:
     model.eval()
-    data = torch.stack([rep for rep in data.dataset.data])
-    return model.encoder(data)[0].detach().numpy()
+    data = torch.stack([rep for rep in data])
+    return model.encoder(data)[0]
+
+
+def decode_samples_from_latent(model: nn.Module, data: torch.Tensor) -> torch.Tensor:
+    model.eval()
+    return model.decoder(data)
 
 
 def get_data(
-    dir: str, representation: str, exercise: str, batch_size: int
+    dir: str, representation: str, exercise: str, batch_size: int = 8
 ) -> DataLoader:
     train_df = pd.read_csv(
         os.path.join(dir, "train", representation, exercise + ".csv")
@@ -40,12 +49,15 @@ def get_data(
     return train_dl, val_dl
 
 
-def decode_dct(x: torch.Tensor, length) -> torch.Tensor:
-    x = x.squeeze().detach().numpy()
+def encode_dct(x: np.ndarray) -> np.ndarray:
+    return dct(x, norm="ortho")[:DCT_COEFFICIENTS_SIZE]
+
+
+def decode_dct(x: np.ndarray, length) -> np.ndarray:
     decoded_signal = []
     for feature in x.transpose(1, 0):
         x_dct = np.zeros(length, dtype=float)
-        x_dct[:25] = feature
+        x_dct[:DCT_COEFFICIENTS_SIZE] = feature
         x_idct = idct(x_dct, norm="ortho")
         decoded_signal.append(x_idct)
     return np.array(decoded_signal).transpose(1, 0)

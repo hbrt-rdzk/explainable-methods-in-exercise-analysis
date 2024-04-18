@@ -1,8 +1,7 @@
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
-import pandas as pd
+import numpy as np
 import torch
-from IPython.display import HTML
 
 X_LIM = (-0.4, 0.4)
 Y_LIM = (-0.4, 0.4)
@@ -66,7 +65,9 @@ def get_3D_animation(data: torch.Tensor, color: str = "red") -> animation.FuncAn
     return animation.FuncAnimation(fig, update, frames=data.shape[0], interval=120)
 
 
-def get_3D_animation_comparison(data_ref, data_query) -> animation.FuncAnimation:
+def get_3D_animation_comparison(
+    data_ref: np.ndarray, data_query: np.ndarray
+) -> animation.FuncAnimation:
     data_ref = data_ref.reshape(-1, 15, 3)
     data_query = data_query.reshape(-1, 15, 3)
 
