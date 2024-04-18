@@ -16,20 +16,21 @@ class Explainer:
         self.autoencoder = autoencoder
         self.classifier = classifier
         self.dl = dl
-        self.data = dl.dataset.data
+        self.data = torch.stack(dl.dataset.data)
         self.labels = dl.dataset.labels
         self.binary_labels = np.array([1 if label == 0 else 0 for label in self.labels])
-        self.latent_data = (
+
+        self.latent_train_data = (
             encode_samples_to_latent(self.autoencoder, self.data).detach().numpy()
         )
 
     def generate_cf(self, query: np.ndarray) -> np.ndarray:
-        train_df = pd.DataFrame(self.latent_data)
+        train_df = pd.DataFrame(self.latent_train_data)
         train_df = train_df.rename(str, axis="columns")
         features = list(train_df.columns)
 
         latent_query = (
-            encode_samples_to_latent(self.autoencoder, [torch.Tensor(query)])
+            encode_samples_to_latent(self.autoencoder, torch.Tensor(query).unsqueeze(0))
             .detach()
             .numpy()
         )

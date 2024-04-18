@@ -1,12 +1,20 @@
 import argparse
+import os
 import pickle
 import warnings
 
 import torch
-import os
+
+from src.deep_models.vae_lstm import LSTMVariationalAutoEncoder
 from src.explainer import Explainer
-from src.utils.data import decode_dct, get_data
-from src.vae_architectures.lstm import LSTMVariationalAutoEncoder
+from src.utils.constants import OPENPOSE_ANGLES
+from src.utils.data import (
+    decode_dct,
+    get_angles_from_joints,
+    get_data,
+    get_random_sample,
+)
+from src.utils.evaluation import get_dtw_score
 from utils.visualization import get_3D_animation_comparison
 
 warnings.filterwarnings(
@@ -45,10 +53,10 @@ def parse_args() -> argparse.Namespace:
         help="Exercise to train the model on",
     )
     parser.add_argument(
-        "--sample_num",
+        "--sample_label",
         type=int,
         default=1,
-        help="Sample number to explain",
+        help="Sample label to explain",
     )
     parser.add_argument(
         "--representation",
@@ -74,6 +82,11 @@ def parse_args() -> argparse.Namespace:
 
 def main(args: argparse.Namespace) -> None:
     train_dl, val_dl = get_data(args.dataset_dir, args.representation, args.exercise)
+    query_sample_dct, query_sample_length = get_random_sample(val_dl, args.sample_label)
+    correct_sample_dct, correct_sample_length = get_random_sample(
+        val_dl, desired_label=0
+    )
+
     architecture_name = args.autoencoder.split(".")[0].split("/")[-1].split("_")[-1]
     match architecture_name.lower():
         case "lstm":
@@ -87,19 +100,34 @@ def main(args: argparse.Namespace) -> None:
     with open(args.classifier, "rb") as f:
         clf = pickle.load(f)
 
-    query_dct_data = val_dl.dataset.data[args.sample_num]
-    query_dct_length = val_dl.dataset.lengths[args.sample_num]
-
     explainer = Explainer(ae, clf, train_dl)
-    fixed_dct_sample = explainer.generate_cf(query_dct_data.detach().numpy())
+    fixed_sample_dct = explainer.generate_cf(query_sample_dct.detach().numpy())
 
-    query_sample = decode_dct(query_dct_data, query_dct_length)
-    fixed_sample = decode_dct(fixed_dct_sample, query_dct_length)
+    correct_sample = decode_dct(correct_sample_dct, correct_sample_length)
+    query_sample = decode_dct(query_sample_dct, query_sample_length)
+    fixed_query_sample = decode_dct(fixed_sample_dct, query_sample_length)
 
-    anim = get_3D_animation_comparison(query_sample, fixed_sample)
+    anim = get_3D_animation_comparison(query_sample, fixed_query_sample)
     anim.save(
-        os.path.join(args.output_dir, f"{args.sample_num}_comparison.mp4"),
+        os.path.join(args.output_dir, f"{args.sample_label}_comparison.mp4"),
         writer="ffmpeg",
+    )
+
+    correct_sample_angles = get_angles_from_joints(
+        correct_sample.reshape(-1, 15, 3), OPENPOSE_ANGLES
+    )
+    query_sample_angles = get_angles_from_joints(
+        query_sample.reshape(-1, 15, 3), OPENPOSE_ANGLES
+    )
+    fixed_query_sample_angles = get_angles_from_joints(
+        fixed_query_sample.reshape(-1, 15, 3), OPENPOSE_ANGLES
+    )
+
+    print(
+        f"DTW score correct - incorrect: {get_dtw_score(correct_sample_angles, query_sample_angles, args.exercise)}"
+    )
+    print(
+        f"DTW score correct - fixed: {get_dtw_score(correct_sample_angles, fixed_query_sample_angles, args.exercise)}"
     )
 
 

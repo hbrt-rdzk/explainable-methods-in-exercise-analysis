@@ -5,54 +5,12 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
+from src.utils.constants import (LUNGES_LABELS, OPENPOSE_ANGLES,
+                                 OPENPOSE_JOINTS, PLANK_LABELS, SQUAT_LABELS)
+from src.utils.data import calculate_3D_angle
 from utils.data import encode_dct
 
 LABELS_COLUMNS = ["exercise", "subject", "label", "rep", "frame"]
-
-SQUAT_LABELS = {
-    1: "correct",
-    2: "feet_too_wide",
-    3: "knees_inwards",
-    4: "not_low_enough",
-    5: "front_bend",
-}
-LUNGES_LABELS = {
-    1: "correct",
-    4: "not_low_enough",
-    6: "knee_passes_toe",
-}
-PLANK_LABELS = {
-    1: "correct",
-    7: "arched_back",
-    8: "hunched_back",
-}
-
-OPENPOSE_JOINTS = {
-    0: "nose",
-    1: "upper_spine",
-    2: "right_shoulder",
-    3: "right_arm",
-    4: "right_wrist",
-    5: "left_shoulder",
-    6: "left_arm",
-    7: "left_wrist",
-    8: "lower_spine",
-    9: "right_hip",
-    10: "right_knee",
-    11: "right_foot",
-    12: "left_hip",
-    13: "left_knee",
-    14: "left_foot",
-}
-
-OPENPOSE_ANGLES = {
-    "left_knee": [14, 13, 12],
-    "right_knee": [11, 10, 9],
-    "right_arm": [4, 3, 2],
-    "left_arm": [7, 6, 5],
-    "left_hip": [13, 12, 5],
-    "right_hip": [10, 9, 2],
-}
 
 logger = logging.getLogger(__name__)
 
@@ -144,9 +102,7 @@ class Processor:
                 joints_3d_positions = rep_data.loc[angle_joints][
                     ["x", "y", "z"]
                 ].astype("float")
-                angles[angle_name] = self.__calculate_3D_angle(
-                    *joints_3d_positions.values
-                )
+                angles[angle_name] = calculate_3D_angle(*joints_3d_positions.values)
             angles_data.append(
                 pd.Series(
                     {
@@ -243,17 +199,3 @@ class Processor:
             for _, subject_group in groups
             for _, rep in subject_group.groupby("rep")
         ]
-
-    @staticmethod
-    def __calculate_3D_angle(A: np.ndarray, B: np.ndarray, C: np.ndarray) -> float:
-        if not (A.shape == B.shape == C.shape == (3,)):
-            raise ValueError("Input arrays must all be of shape (3,).")
-
-        ba = A - B
-        bc = C - B
-
-        cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
-        cosine_angle = np.clip(cosine_angle, -1, 1)
-        angle = np.arccos(cosine_angle)
-
-        return np.degrees(angle)
