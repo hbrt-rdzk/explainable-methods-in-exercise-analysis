@@ -21,6 +21,7 @@ class Processor:
     - Angles
     - DCT coefficients
     """
+
     def __init__(self, dataset: dict):
         self.dataset = dataset
         self.poses = self.dataset["poses"]

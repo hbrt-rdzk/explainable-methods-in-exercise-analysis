@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 class VariationalAutoEncoderTrainer:
     """Trainer of all Variational Autoencoder classes"""
+
     def __init__(
         self,
         model,
@@ -90,6 +91,7 @@ class VariationalAutoEncoderTrainer:
 
 class EarlyStopper:
     """Early stop training if loss is not descending"""
+
     def __init__(self, patience: int = 10, delta: float = 0.0005) -> None:
         self.best_score = None
         self.best_model = None
@@ -118,6 +120,7 @@ class EarlyStopper:
 
 class ClassifierTrainer:
     """Trainer of the Sklearn's classification model"""
+
     def __init__(
         self,
         estimator: BaseEstimator,

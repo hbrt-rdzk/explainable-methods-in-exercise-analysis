@@ -105,3 +105,40 @@ def encode_samples_to_latent(model: nn.Module, data: torch.Tensor) -> torch.Tens
 def decode_samples_from_latent(model: nn.Module, data: torch.Tensor) -> torch.Tensor:
     model.eval()
     return model.decoder(data)
+
+
+def segment_signal(
+    x: pd.DataFrame, important_angles: list[str], sliding_window_size: int = 5
+) -> pd.DataFrame:
+    x = x[important_angles]
+    rep_signal = x.mean(axis=1)
+    zero_point = np.mean(rep_signal)
+
+    variances = []
+    for idx in range(0, len(rep_signal) - sliding_window_size + 1, 1):
+        window = rep_signal[idx : idx + sliding_window_size]
+        variances.append(np.std(window))
+    variances = np.array(variances)
+
+    below_mean_indexes = np.where(rep_signal < zero_point)[0]
+    above_mean_indexes = np.where(rep_signal > zero_point)[0]
+
+    mid_phase_idx = (
+        below_mean_indexes[np.argmin(variances[below_mean_indexes])]
+        + sliding_window_size // 2
+    )
+    above_mean_indexes_left = above_mean_indexes[above_mean_indexes < mid_phase_idx]
+    start_phase_idx = (
+        above_mean_indexes_left[np.argmin(variances[above_mean_indexes_left])]
+        + sliding_window_size // 2
+    )
+
+    above_mean_indexes_right = above_mean_indexes[above_mean_indexes > mid_phase_idx]
+    above_mean_indexes_right = above_mean_indexes_right[
+        above_mean_indexes_right < len(variances)
+    ]
+    finish_phase_idx = (
+        above_mean_indexes_right[np.argmin(variances[above_mean_indexes_right])]
+        + sliding_window_size // 2
+    )
+    return x.iloc[[start_phase_idx, mid_phase_idx, finish_phase_idx]]

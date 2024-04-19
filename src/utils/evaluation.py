@@ -5,18 +5,14 @@ from tslearn.metrics import dtw, dtw_path
 from src.utils.constants import ANGLES_FEATURES
 
 
-def get_dtw_score(reference: pd.DataFrame, query: pd.DataFrame, exercise: str) -> float:
+def get_dtw_score(reference: pd.DataFrame, query: pd.DataFrame) -> float:
     """Calculate dtw score between two signals"""
-    features = get_features(exercise)
-    return dtw(reference[features], query[features])
+    return dtw(reference, query)
 
 
-def get_dtw_indexes(
-    reference: pd.DataFrame, query: pd.DataFrame, exercise: str
-) -> np.ndarray:
+def get_dtw_indexes(reference: pd.DataFrame, query: pd.DataFrame) -> np.ndarray:
     """Return warped dtw from query to reference"""
-    features = get_features(exercise)
-    path, _ = dtw_path(reference[features], query[features])
+    path, _ = dtw_path(reference, query)
     path = np.array(path)
 
     reference = path[:, 0]
@@ -36,16 +32,3 @@ def filter_repetable_reference_indexes(
             query_to_refernce_cp = np.delete(query_to_refernce_cp, idx)
 
     return query_to_refernce_cp
-
-
-def get_features(exercise: str) -> list[str]:
-    """Return important features for desired exercise"""
-    match exercise:
-        case "squat":
-            return ANGLES_FEATURES.SQUAT_ANGLES.value
-        case "lunges":
-            return ANGLES_FEATURES.LUNGES_ANGLES.value
-        case "plank":
-            return ANGLES_FEATURES.PLANK_ANGLES.value
-        case _:
-            raise ValueError(f"Exercise {exercise} not supported")

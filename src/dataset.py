@@ -11,6 +11,7 @@ from src.utils.constants import (ANGLE_FEATUERES, MEAN_TIME_SERIES_LENGTH,
 
 class ExerciseDataset(Dataset):
     """This class implements custom input for PyTorch's DataLoader"""
+
     def __init__(self, exercise_data: pd.DataFrame, representation: str = "dct"):
         if representation in ("joints", "dct"):
             feature_names = POSITION_FEATURES

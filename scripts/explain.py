@@ -5,7 +5,6 @@ import warnings
 
 import torch
 
-from src.vae_architectures.lstm import LSTMVariationalAutoEncoder
 from src.explainer import Explainer
 from src.utils.constants import OPENPOSE_ANGLES
 from src.utils.data import (
@@ -15,6 +14,7 @@ from src.utils.data import (
     get_random_sample,
 )
 from src.utils.evaluation import get_dtw_score
+from src.vae_architectures.lstm import LSTMVariationalAutoEncoder
 from utils.visualization import get_3D_animation_comparison
 
 warnings.filterwarnings(
@@ -59,6 +59,13 @@ def parse_args() -> argparse.Namespace:
         help="Sample label to explain",
     )
     parser.add_argument(
+        "--method",
+        type=str,
+        choices=["cf", "closest"],
+        default="cf",
+        help="Generation of the new sample method",
+    )
+    parser.add_argument(
         "--representation",
         type=str,
         choices=["joints", "angles", "dct"],
@@ -100,18 +107,18 @@ def main(args: argparse.Namespace) -> None:
     with open(args.classifier, "rb") as f:
         clf = pickle.load(f)
 
-    explainer = Explainer(ae, clf, train_dl)
-    fixed_sample_dct = explainer.generate_cf(query_sample_dct.detach().numpy())
+    explainer = Explainer(ae, clf, train_dl, args.exercise)
+    match args.method:
+        case "cf":
+            fixed_sample_dct = explainer.generate_cf(query_sample_dct.detach().numpy())
+        case "closest":
+            fixed_sample_dct = explainer.get_closest_correct(query_sample_dct.detach().numpy())
+        case _:
+            raise ValueError("Method not supported")
 
     correct_sample = decode_dct(correct_sample_dct, correct_sample_length)
     query_sample = decode_dct(query_sample_dct, query_sample_length)
     fixed_query_sample = decode_dct(fixed_sample_dct, query_sample_length)
-
-    anim = get_3D_animation_comparison(query_sample, fixed_query_sample)
-    anim.save(
-        os.path.join(args.output_dir, f"{args.sample_label}_comparison.mp4"),
-        writer="ffmpeg",
-    )
 
     correct_sample_angles = get_angles_from_joints(
         correct_sample.reshape(-1, 15, 3), OPENPOSE_ANGLES
@@ -124,11 +131,24 @@ def main(args: argparse.Namespace) -> None:
     )
 
     print(
-        f"DTW score correct - incorrect: {get_dtw_score(correct_sample_angles, query_sample_angles, args.exercise)}"
+        f"Statistical results for incorrect sample:\n{explainer.statistical_classification(query_sample_angles)}"
     )
     print(
-        f"DTW score correct - fixed: {get_dtw_score(correct_sample_angles, fixed_query_sample_angles, args.exercise)}"
+        f"Statistical results for fixed sample:\n{explainer.statistical_classification(fixed_query_sample_angles)}"
     )
+    print(
+        f"DTW score correct - incorrect: {get_dtw_score(correct_sample_angles, query_sample_angles)}"
+    )
+    print(
+        f"DTW score correct - fixed: {get_dtw_score(correct_sample_angles, fixed_query_sample_angles)}/n"
+    )
+
+    anim = get_3D_animation_comparison(query_sample, fixed_query_sample)
+    anim.save(
+        os.path.join(args.output_dir, f"{args.sample_label}_comparison.mp4"),
+        writer="ffmpeg",
+    )
+    print(f"Fixed sample comparison saved in {args.output_dir}")
 
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@ import torch.nn as nn
 
 class LSTMVariationalAutoEncoder(nn.Module):
     """Variational AutoEncoder based on LSTM architecture"""
+
     def __init__(
         self,
         sequence_length: int,
@@ -26,6 +27,7 @@ class LSTMVariationalAutoEncoder(nn.Module):
 
 class LSTMEncoder(nn.Module):
     """Encoder based on LSTM architecture"""
+
     def __init__(
         self, input_size: int, hidden_size: int, latent_size: int, num_layers: int
     ) -> None:
@@ -58,6 +60,7 @@ class LSTMEncoder(nn.Module):
 
 class LSTMDecoder(nn.Module):
     """Decoder based on LSTM architecture"""
+
     def __init__(
         self,
         sequence_length: int,

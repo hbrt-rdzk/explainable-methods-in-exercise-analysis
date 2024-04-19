@@ -2,6 +2,7 @@ import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+
 from src.utils.constants import COLORS, OPENPOSE_CONNECTIONS
 
 X_LIM = (-0.4, 0.4)
