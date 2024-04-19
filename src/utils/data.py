@@ -37,7 +37,9 @@ def get_data(
     return train_dl, val_dl
 
 
-def get_random_sample(dl: DataLoader, desired_label: int) -> tuple[torch.Tensor, int]:
+def get_random_sample(
+    dl: DataLoader, desired_label: int
+) -> tuple[torch.Tensor, int, str]:
     """Return random sample with desired label"""
     label = None
     dl_length = len(dl)
@@ -45,7 +47,11 @@ def get_random_sample(dl: DataLoader, desired_label: int) -> tuple[torch.Tensor,
         rand_idx = random.randint(0, dl_length - 1)
         label = dl.dataset.labels_encoded[rand_idx]
 
-    return dl.dataset.data[rand_idx], dl.dataset.lengths[rand_idx]
+    return (
+        dl.dataset.data[rand_idx],
+        dl.dataset.lengths[rand_idx],
+        dl.dataset.labels[rand_idx],
+    )
 
 
 def joints_rep_df_to_numpy(x: pd.DataFrame) -> np.ndarray:
