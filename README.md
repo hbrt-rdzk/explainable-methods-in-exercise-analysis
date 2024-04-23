@@ -1,12 +1,12 @@
 # explainable-methods-in-exercise-analysis
 This project presents generative method of properly executed exercise, based on Counterfactual Explainations and Variational AutoEncoders.
 
+![knee_passes_toe_fixed-ezgif com-video-to-gif-converter](https://github.com/hbrt-rdzk/explainable-methods-in-exercise-analysis/assets/123837698/aedc9149-38e6-4695-bffa-34b38f0c3dcb)
 
 
 ## Introduction
 To learn models proper time series data EC3D dataset of 3D joints representations was obtained from https://github.com/Jacoo-Zhao/3D-Pose-Based-Feedback-For-Physical-Exercises?tab=readme-ov-file.
 
-Generating counterfactual examples pipeline is presented below:
 ![deep](https://github.com/hbrt-rdzk/explainable-methods-in-exercise-analysis/assets/123837698/4f43b6c7-d168-4e73-9e0e-4f2ec75e18ae)
 
 
