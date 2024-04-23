@@ -7,12 +7,8 @@ import torch
 
 from src.explainer import Explainer
 from src.utils.constants import OPENPOSE_ANGLES
-from src.utils.data import (
-    decode_dct,
-    get_angles_from_joints,
-    get_data,
-    get_random_sample,
-)
+from src.utils.data import (decode_dct, get_angles_from_joints, get_data,
+                            get_random_sample)
 from src.utils.evaluation import get_dtw_score
 from src.vae_architectures.lstm import LSTMVariationalAutoEncoder
 from utils.visualization import get_3D_animation_comparison
@@ -87,7 +83,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main(args: argparse.Namespace) -> None:
-    train_dl, val_dl = get_data(args.dataset_dir, args.representation, args.exercise)
+    train_dl, val_dl = get_data(args.dataset_dir, args.exercise, args.representation)
     query_sample_dct, query_sample_length = get_random_sample(val_dl, args.sample_label)
     correct_sample_dct, correct_sample_length = get_random_sample(
         val_dl, desired_label="correct"

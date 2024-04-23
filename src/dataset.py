@@ -5,11 +5,8 @@ from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset
 from tslearn.preprocessing import TimeSeriesResampler
 
-from src.utils.constants import (
-    ANGLE_FEATUERES,
-    MEAN_TIME_SERIES_LENGTH,
-    POSITION_FEATURES,
-)
+from src.utils.constants import (ANGLE_FEATUERES, MEAN_TIME_SERIES_LENGTH,
+                                 POSITION_FEATURES)
 
 
 class ExerciseDataset(Dataset):

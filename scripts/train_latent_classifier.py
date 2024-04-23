@@ -1,8 +1,9 @@
 import argparse
+import os
 
 import torch
 from sklearn.tree import DecisionTreeClassifier
-import os
+
 from src.trainer import ClassifierTrainer
 from src.utils.data import encode_samples_to_latent, get_data
 from src.vae_architectures.lstm import LSTMVariationalAutoEncoder
@@ -52,7 +53,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main(args: argparse.Namespace) -> None:
-    train_dl, val_dl = get_data(args.dataset_dir, args.representation, args.exercise)
+    train_dl, val_dl = get_data(args.dataset_dir, args.exercise, args.representation)
     train_data = torch.stack(train_dl.dataset.data)
     val_data = torch.stack(val_dl.dataset.data)
 

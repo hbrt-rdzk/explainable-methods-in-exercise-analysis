@@ -8,11 +8,8 @@ from sklearn.base import BaseEstimator
 from torch import nn
 from torch.utils.data import DataLoader
 
-from src.utils.data import (
-    decode_samples_from_latent,
-    encode_samples_to_latent,
-    segment_signal,
-)
+from src.utils.data import (decode_samples_from_latent,
+                            encode_samples_to_latent, segment_signal)
 
 
 class Explainer:
@@ -113,7 +110,11 @@ class Explainer:
     def statistical_classification(self, query_angles: pd.DataFrame) -> str:
         phases_names = self.reference_table.index.values
         reference_angles = self.reference_table.reset_index(drop=True)
-        phases = segment_signal(query_angles, self.important_angles)
+
+        if len(phases_names) > 1:
+            phases = segment_signal(query_angles, self.important_angles)
+        else:
+            phases = query_angles.loc[len(query_angles) // 2]
         phases = phases.reset_index(drop=True)
 
         results = reference_angles - phases

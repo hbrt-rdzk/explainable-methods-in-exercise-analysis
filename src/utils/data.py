@@ -7,6 +7,7 @@ import torch
 from scipy.fft import dct, idct
 from torch import nn
 from torch.utils.data import DataLoader
+from tslearn.preprocessing import TimeSeriesResampler
 
 from src.dataset import ExerciseDataset
 from src.utils.constants import DCT_COEFFICIENTS_SIZE
@@ -52,10 +53,7 @@ def get_random_sample(
 
 def joints_rep_df_to_numpy(x: pd.DataFrame) -> np.ndarray:
     """Convert joints_df of one repetition to numpy array"""
-    joints = []
-    for _, frame in x.groupby("frame"):
-        joints.append(frame[["x", "y", "z"]])
-    return np.array(joints)
+    return np.array([frame[["x", "y", "z"]] for _, frame in x.groupby("frame")])
 
 
 def get_angles_from_joints(joints: np.ndarray, angles_formula: dict) -> pd.DataFrame:
@@ -86,6 +84,9 @@ def calculate_3D_angle(A: np.ndarray, B: np.ndarray, C: np.ndarray) -> float:
 
 
 def encode_dct(x: np.ndarray) -> np.ndarray:
+    if x.shape[0] < DCT_COEFFICIENTS_SIZE:
+        resampler = TimeSeriesResampler(sz=DCT_COEFFICIENTS_SIZE)
+        x = np.array(resampler.fit_transform(x)).squeeze()
     return dct(x, norm="ortho")[:DCT_COEFFICIENTS_SIZE]
 
 

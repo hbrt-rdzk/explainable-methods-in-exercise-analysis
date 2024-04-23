@@ -1,0 +1,12 @@
+important_angles: [
+    left_knee,
+    right_knee,
+    left_hip,
+    right_hip
+]
+reference_table:
+  mid:
+    left_knee: 175
+    right_knee: 175
+    left_hip: 167
+    right_hip: 167

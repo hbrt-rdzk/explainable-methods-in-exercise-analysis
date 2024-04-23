@@ -5,13 +5,8 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-from src.utils.constants import (
-    LUNGES_LABELS,
-    OPENPOSE_ANGLES,
-    OPENPOSE_JOINTS,
-    PLANK_LABELS,
-    SQUAT_LABELS,
-)
+from src.utils.constants import (LUNGES_LABELS, OPENPOSE_ANGLES,
+                                 OPENPOSE_JOINTS, PLANK_LABELS, SQUAT_LABELS)
 from src.utils.data import calculate_3D_angle
 from utils.data import encode_dct
 
