@@ -8,7 +8,7 @@ This project presents generative method of properly executed exercise, based on 
 To learn models proper time series data EC3D dataset of 3D joints representations was obtained from https://github.com/Jacoo-Zhao/3D-Pose-Based-Feedback-For-Physical-Exercises?tab=readme-ov-file.
 
 ![deep](https://github.com/hbrt-rdzk/explainable-methods-in-exercise-analysis/assets/123837698/4f43b6c7-d168-4e73-9e0e-4f2ec75e18ae)
-
+The designed framework takes a 3D pose representation as input and converts its signal into the first K Discrete Cosine Transform coefficients. A VAE then encodes this representation into a latent space. Perturbation of the sample is performed here to find the proper version of the exercise using counterfactual explanations. After applying corrections in the latent space, the sample is decoded in reverse order to obtain the appropriate version of the performed exercise.
 
 ## Installation
 ```git clone https://github.com/hubert/explainable-methods-in-exercise-analysis.git```
