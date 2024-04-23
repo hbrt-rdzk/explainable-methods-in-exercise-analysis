@@ -138,7 +138,7 @@ def main(args: argparse.Namespace) -> None:
         f"DTW score correct - fixed: {get_dtw_score(correct_sample_angles[explainer.important_angles], fixed_query_sample_angles[explainer.important_angles]):.4f}\n"
     )
 
-    anim = get_3D_animation_comparison(query_sample, fixed_query_sample)
+    anim = get_3D_animation_comparison(query_sample, fixed_query_sample, args.sample_label)
     anim.save(
         os.path.join(args.output_dir, args.exercise, f"{args.sample_label}_fixed.mp4"),
         writer="ffmpeg",

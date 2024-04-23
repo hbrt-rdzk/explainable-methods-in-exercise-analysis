@@ -10,7 +10,7 @@ Y_LIM = (-0.4, 0.4)
 Z_LIM = (-0.4, 0.4)
 
 ELEV = 28
-AZIM = 45
+AZIM = 30
 
 
 def get_3D_animation(data: torch.Tensor, color: str = "red") -> animation.FuncAnimation:
@@ -47,7 +47,7 @@ def get_3D_animation(data: torch.Tensor, color: str = "red") -> animation.FuncAn
 
 
 def get_3D_animation_comparison(
-    data_ref: np.ndarray, data_query: np.ndarray
+    data_ref: np.ndarray, data_query: np.ndarray, label: str
 ) -> animation.FuncAnimation:
     """Return animation of incorrect and fixed joints representations in time"""
     data_ref = data_ref.reshape(-1, 15, 3)
@@ -58,6 +58,7 @@ def get_3D_animation_comparison(
 
     def update(i):
         ax.clear()
+        ax.set_title("Error label: " + ' '.join(label.split('_')))
 
         ax.set_xticks([])
         ax.set_yticks([])
@@ -67,20 +68,22 @@ def get_3D_animation_comparison(
         ax.set_ylim3d(*Y_LIM)
         ax.set_zlim3d(*Z_LIM)
 
-        ax.view_init(elev=ELEV, azim=AZIM)
+        ax.view_init(elev=ELEV, azim=AZIM + i * 0.5)
 
         frame_data_query = data_query[i]
         frame_data_ref = data_ref[i]
 
         ax.scatter3D(
-            frame_data_ref[:, 0], frame_data_ref[:, 1], frame_data_ref[:, 2], c="red"
+            frame_data_ref[:, 0], frame_data_ref[:, 1], frame_data_ref[:, 2], c="red", label="Original"
         )
         ax.scatter3D(
             frame_data_query[:, 0],
             frame_data_query[:, 1],
             frame_data_query[:, 2],
             c="green",
+            label="Corrected"
         )
+        ax.legend()
 
         for start, stop in OPENPOSE_CONNECTIONS:
             ax.plot(

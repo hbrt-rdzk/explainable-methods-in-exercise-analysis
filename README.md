@@ -1,14 +1,14 @@
 # explainable-methods-in-exercise-analysis
-Data processing and models training for explainable pose estimation models
+This project presents generative method of properly executed exercise, based on Counterfactual Explainations and Variational AutoEncoders.
+
+
 
 ## Introduction
-Project takes into account four methods:
-- LSTM
-- GraphCNN
-- SignalCNN
-- Statistical
+To learn models proper time series data EC3D dataset of 3D joints representations was obtained from https://github.com/Jacoo-Zhao/3D-Pose-Based-Feedback-For-Physical-Exercises?tab=readme-ov-file.
 
-to classify and  explain performed errors in exercise performance. EC3D dataset of 3D joints representations was obtained from https://github.com/Jacoo-Zhao/3D-Pose-Based-Feedback-For-Physical-Exercises?tab=readme-ov-file.
+Generating counterfactual examples pipeline is presented below:
+
+
 
 ## Installation
 ```git clone https://github.com/hubert/explainable-methods-in-exercise-analysis.git```
