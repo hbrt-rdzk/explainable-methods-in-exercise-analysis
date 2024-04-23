@@ -24,7 +24,6 @@ def parse_args() -> argparse.Namespace:
         "--exercise",
         type=str,
         choices=["squat", "plank", "lunges"],
-        default="squat",
         help="Exercise to train the model on",
     )
     parser.add_argument(
@@ -76,7 +75,7 @@ def parse_args() -> argparse.Namespace:
 
 def main(args: argparse.Namespace) -> None:
     train_dl, val_dl = get_data(
-        args.dataset_dir, args.representation, args.exercise, args.batch_size
+        args.dataset_dir, args.exercise, args.representation, args.batch_size
     )
     match args.model.lower():
         case "lstm":
@@ -98,9 +97,7 @@ def main(args: argparse.Namespace) -> None:
     )
     trainer.train(
         args.num_epochs,
-        os.path.join(
-            args.weights_dir, f"{args.exercise}_{args.representation}_{args.model}.pt"
-        ),
+        os.path.join(args.weights_dir, f"{args.representation}_{args.model}.pt"),
     )
 
 

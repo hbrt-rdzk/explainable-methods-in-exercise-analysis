@@ -13,13 +13,13 @@ from src.utils.constants import DCT_COEFFICIENTS_SIZE
 
 
 def get_data(
-    dir: str, representation: str, exercise: str, batch_size: int = 8
+    dir: str, exercise: str, representation: str, batch_size: int = 8
 ) -> DataLoader:
     """Get dataloaders from csv file"""
     train_df = pd.read_csv(
-        os.path.join(dir, "train", representation, exercise + ".csv")
+        os.path.join(dir, "train", exercise, representation + ".csv")
     )
-    test_df = pd.read_csv(os.path.join(dir, "test", representation, exercise + ".csv"))
+    test_df = pd.read_csv(os.path.join(dir, "test", exercise, representation + ".csv"))
     train_dataset = ExerciseDataset(train_df, representation=representation)
     test_dataset = ExerciseDataset(test_df, representation=representation)
 
@@ -38,20 +38,16 @@ def get_data(
 
 
 def get_random_sample(
-    dl: DataLoader, desired_label: int
+    dl: DataLoader, desired_label: str
 ) -> tuple[torch.Tensor, int, str]:
     """Return random sample with desired label"""
     label = None
-    dl_length = len(dl)
+    dl_length = len(dl.dataset)
     while label != desired_label:
         rand_idx = random.randint(0, dl_length - 1)
-        label = dl.dataset.labels_encoded[rand_idx]
+        label = dl.dataset.labels[rand_idx]
 
-    return (
-        dl.dataset.data[rand_idx],
-        dl.dataset.lengths[rand_idx],
-        dl.dataset.labels[rand_idx],
-    )
+    return (dl.dataset.data[rand_idx], dl.dataset.lengths[rand_idx])
 
 
 def joints_rep_df_to_numpy(x: pd.DataFrame) -> np.ndarray:

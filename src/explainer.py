@@ -8,8 +8,11 @@ from sklearn.base import BaseEstimator
 from torch import nn
 from torch.utils.data import DataLoader
 
-from src.utils.data import (decode_samples_from_latent,
-                            encode_samples_to_latent, segment_signal)
+from src.utils.data import (
+    decode_samples_from_latent,
+    encode_samples_to_latent,
+    segment_signal,
+)
 
 
 class Explainer:
@@ -65,7 +68,7 @@ class Explainer:
         d = dice_ml.Data(
             dataframe=train_df, continuous_features=features, outcome_name="label"
         )
-        exp = dice_ml.Dice(d, m)
+        exp = dice_ml.Dice(d, m, method="genetic")
 
         explanation = exp.generate_counterfactuals(
             latent_query_df,
@@ -120,7 +123,7 @@ class Explainer:
         for phase, result in results.iterrows():
             wrong_angles = result.loc[result.abs() > self.classification_threshold]
             for angle_name, difference in wrong_angles.items():
-                result_str += f"At {phase} phase {angle_name} angle was different from reference by {difference} degrees.\n"
+                result_str += f"At {phase} phase {angle_name} angle was different from reference by {difference:.2f} degrees.\n"
 
         if not result_str:
             result_str = "correct"

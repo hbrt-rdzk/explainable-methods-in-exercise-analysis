@@ -1,9 +1,8 @@
 import argparse
 
-import numpy as np
 import torch
 from sklearn.tree import DecisionTreeClassifier
-
+import os
 from src.trainer import ClassifierTrainer
 from src.utils.data import encode_samples_to_latent, get_data
 from src.vae_architectures.lstm import LSTMVariationalAutoEncoder
@@ -34,7 +33,6 @@ def parse_args() -> argparse.Namespace:
         "--exercise",
         type=str,
         choices=["squat", "plank", "lunges"],
-        default="squat",
         help="Exercise to train the model on",
     )
     parser.add_argument(
@@ -84,7 +82,7 @@ def main(args: argparse.Namespace) -> None:
         test_labels,
     )
     trainer.train()
-    trainer.save(args.weights_dir)
+    trainer.save(args.weights_dir, f"{args.representation}_")
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ import warnings
 import torch
 
 from src.explainer import Explainer
-from src.utils.constants import OPENPOSE_ANGLES, SQUAT_LABELS, PLANK_LABELS, LUNGES_LABELS
+from src.utils.constants import OPENPOSE_ANGLES
 from src.utils.data import (
     decode_dct,
     get_angles_from_joints,
@@ -49,12 +49,11 @@ def parse_args() -> argparse.Namespace:
         "--exercise",
         type=str,
         choices=["squat", "plank", "lunges"],
-        default="squat",
         help="Exercise to train the model on",
     )
     parser.add_argument(
         "--sample_label",
-        type=int,
+        type=str,
         default=1,
         help="Sample label to explain",
     )
@@ -89,9 +88,9 @@ def parse_args() -> argparse.Namespace:
 
 def main(args: argparse.Namespace) -> None:
     train_dl, val_dl = get_data(args.dataset_dir, args.representation, args.exercise)
-    query_sample_dct, query_sample_length, query_label = get_random_sample(val_dl, args.sample_label)
-    correct_sample_dct, correct_sample_length, _ = get_random_sample(
-        val_dl, desired_label=0
+    query_sample_dct, query_sample_length = get_random_sample(val_dl, args.sample_label)
+    correct_sample_dct, correct_sample_length = get_random_sample(
+        val_dl, desired_label="correct"
     )
 
     architecture_name = args.autoencoder.split(".")[0].split("/")[-1].split("_")[-1]
@@ -137,15 +136,15 @@ def main(args: argparse.Namespace) -> None:
         f"Statistical results for fixed sample:\n{explainer.statistical_classification(fixed_query_sample_angles)}"
     )
     print(
-        f"DTW score correct - incorrect: {get_dtw_score(correct_sample_angles, query_sample_angles)}"
+        f"DTW score correct - incorrect: {get_dtw_score(correct_sample_angles[explainer.important_angles], query_sample_angles[explainer.important_angles]):.4f}"
     )
     print(
-        f"DTW score correct - fixed: {get_dtw_score(correct_sample_angles, fixed_query_sample_angles)}/n"
+        f"DTW score correct - fixed: {get_dtw_score(correct_sample_angles[explainer.important_angles], fixed_query_sample_angles[explainer.important_angles]):.4f}\n"
     )
 
     anim = get_3D_animation_comparison(query_sample, fixed_query_sample)
     anim.save(
-        os.path.join(args.output_dir, f"{args.exercise}_{query_label}_fixed.mp4"),
+        os.path.join(args.output_dir, args.exercise, f"{args.sample_label}_fixed.mp4"),
         writer="ffmpeg",
     )
     print(f"Fixed sample comparison saved in {args.output_dir}")

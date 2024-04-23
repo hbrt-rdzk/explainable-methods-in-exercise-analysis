@@ -145,7 +145,7 @@ class ClassifierTrainer:
             f"Test data results: {classification_report(binary_test_labels, self.predictions)}"
         )
 
-    def save(self, path: str) -> None:
+    def save(self, path: str, file_name: str) -> None:
         """Save classificaiton model"""
-        pkl.dump(self.estimator, open(os.path.join(path, "clf.pkl"), "wb"))
+        pkl.dump(self.estimator, open(os.path.join(path, file_name + "clf.pkl"), "wb"))
         logger.info(f"Classifier saved in {path}")

@@ -5,8 +5,13 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-from src.utils.constants import (LUNGES_LABELS, OPENPOSE_ANGLES,
-                                 OPENPOSE_JOINTS, PLANK_LABELS, SQUAT_LABELS)
+from src.utils.constants import (
+    LUNGES_LABELS,
+    OPENPOSE_ANGLES,
+    OPENPOSE_JOINTS,
+    PLANK_LABELS,
+    SQUAT_LABELS,
+)
 from src.utils.data import calculate_3D_angle
 from utils.data import encode_dct
 
@@ -57,35 +62,35 @@ class Processor:
                 joints_data = self.__process_joints(df, labels)
                 self.save_data(
                     joints_data,
-                    os.path.join(output_dir, dataset_name, "joints"),
-                    exercise_name,
+                    os.path.join(output_dir, dataset_name, exercise_name),
+                    "joints",
                 )
 
                 logger.info(f"Processing {dataset_name} angles...")
                 angles_data = self.__process_angles(joints_data)
                 self.save_data(
                     angles_data,
-                    os.path.join(output_dir, dataset_name, "angles"),
-                    exercise_name,
+                    os.path.join(output_dir, dataset_name, exercise_name),
+                    "angles",
                 )
 
                 logger.info(f"Processing {dataset_name} dct coefficients...")
                 dct_data = self.__process_dct(joints_data)
                 self.save_data(
                     dct_data,
-                    os.path.join(output_dir, dataset_name, "dct"),
-                    exercise_name,
+                    os.path.join(output_dir, dataset_name, exercise_name),
+                    "dct",
                 )
 
         logger.info(f"Processed succesfully. Data saved in {output_dir}")
 
     @staticmethod
-    def save_data(data: pd.DataFrame, output_dir: str, exercise_name: str) -> None:
+    def save_data(data: pd.DataFrame, output_dir: str, representation: str) -> None:
         """Save DataFrame to given directory"""
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         data.to_csv(
-            os.path.join(output_dir, f"{exercise_name}.csv"),
+            os.path.join(output_dir, f"{representation}.csv"),
             index=False,
         )
 
