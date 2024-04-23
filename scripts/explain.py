@@ -7,8 +7,12 @@ import torch
 
 from src.explainer import Explainer
 from src.utils.constants import OPENPOSE_ANGLES
-from src.utils.data import (decode_dct, get_angles_from_joints, get_data,
-                            get_random_sample)
+from src.utils.data import (
+    decode_dct,
+    get_angles_from_joints,
+    get_data,
+    get_random_sample,
+)
 from src.utils.evaluation import get_dtw_score
 from src.vae_architectures.lstm import LSTMVariationalAutoEncoder
 from utils.visualization import get_3D_animation_comparison
@@ -125,20 +129,33 @@ def main(args: argparse.Namespace) -> None:
         fixed_query_sample.reshape(-1, 15, 3), OPENPOSE_ANGLES
     )
 
-    print(
-        f"Statistical results for incorrect sample:\n{explainer.statistical_classification(query_sample_angles)}"
+    incorrect_classification_report = explainer.statistical_classification(
+        query_sample_angles
     )
-    print(
-        f"Statistical results for fixed sample:\n{explainer.statistical_classification(fixed_query_sample_angles)}"
-    )
-    print(
-        f"DTW score correct - incorrect: {get_dtw_score(correct_sample_angles[explainer.important_angles], query_sample_angles[explainer.important_angles]):.4f}"
-    )
-    print(
-        f"DTW score correct - fixed: {get_dtw_score(correct_sample_angles[explainer.important_angles], fixed_query_sample_angles[explainer.important_angles]):.4f}\n"
+    fixed_classification_report = explainer.statistical_classification(
+        query_sample_angles
     )
 
-    anim = get_3D_animation_comparison(query_sample, fixed_query_sample, args.sample_label)
+    incorrect_dtw_score = get_dtw_score(
+        correct_sample_angles[explainer.important_angles],
+        query_sample_angles[explainer.important_angles],
+    )
+    fixed_dtw_score = get_dtw_score(
+        correct_sample_angles[explainer.important_angles],
+        fixed_query_sample_angles[explainer.important_angles],
+    )
+
+    print(
+        f"""
+        Statistical results for incorrect sample:\n{incorrect_classification_report}
+        Statistical results for fixed sample:\n{fixed_classification_report}
+        DTW score correct - incorrect: {incorrect_dtw_score:.4f}
+        DTW score correct - fixed: {fixed_dtw_score:.4f}\n"""
+    )
+
+    anim = get_3D_animation_comparison(
+        query_sample, fixed_query_sample, args.sample_label
+    )
     anim.save(
         os.path.join(args.output_dir, args.exercise, f"{args.sample_label}_fixed.mp4"),
         writer="ffmpeg",
