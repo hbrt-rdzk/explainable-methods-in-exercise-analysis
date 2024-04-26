@@ -87,3 +87,10 @@ COLORS = [
     "red",
     "blue",
 ]
+
+NUM_JOINTS = 15
+SEQUENCE_LENGTH = 25
+
+LATENT_SIZE = 256
+NUM_LAYERS = 2
+HIDDEN_SIZE = 256

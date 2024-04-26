@@ -5,15 +5,11 @@ import torch
 from sklearn.tree import DecisionTreeClassifier
 
 from src.trainer import ClassifierTrainer
+from src.utils.constants import (HIDDEN_SIZE, LATENT_SIZE, NUM_JOINTS,
+                                 NUM_LAYERS, SEQUENCE_LENGTH)
 from src.utils.data import encode_samples_to_latent, get_data
 from src.vae_architectures.lstm import LSTMVariationalAutoEncoder
 from src.vae_architectures.signal_cnn import SignalCNNVariationalAutoEncoder
-
-NUM_JOINTS = 15
-SEQUENCE_LENGTH = 25
-HIDDEN_SIZE = 256
-LATENT_SIZE = 256
-NUM_LAYERS = 2
 
 
 def parse_args() -> argparse.Namespace:
@@ -66,7 +62,7 @@ def main(args: argparse.Namespace) -> None:
             )
         case "1dcnn":
             vae = SignalCNNVariationalAutoEncoder(
-                NUM_JOINTS * 3, HIDDEN_SIZE, LATENT_SIZE
+                SEQUENCE_LENGTH, NUM_JOINTS * 3, HIDDEN_SIZE, LATENT_SIZE
             )
         case _:
             raise ValueError("Model name not supported")

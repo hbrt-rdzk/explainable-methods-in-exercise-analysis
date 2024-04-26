@@ -4,16 +4,11 @@ import os
 import torch
 
 from src.trainer import VariationalAutoEncoderTrainer
+from src.utils.constants import (HIDDEN_SIZE, LATENT_SIZE, NUM_JOINTS,
+                                 NUM_LAYERS, SEQUENCE_LENGTH)
 from src.utils.data import get_data
 from src.vae_architectures.lstm import LSTMVariationalAutoEncoder
 from src.vae_architectures.signal_cnn import SignalCNNVariationalAutoEncoder
-
-NUM_JOINTS = 15
-SEQUENCE_LENGTH = 25
-
-LATENT_SIZE = 256
-NUM_LAYERS = 2
-HIDDEN_SIZE = 256
 
 generator = torch.manual_seed(0)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

@@ -6,7 +6,8 @@ import warnings
 import torch
 
 from src.explainer import Explainer
-from src.utils.constants import OPENPOSE_ANGLES
+from src.utils.constants import (HIDDEN_SIZE, LATENT_SIZE, NUM_JOINTS,
+                                 NUM_LAYERS, OPENPOSE_ANGLES, SEQUENCE_LENGTH)
 from src.utils.data import (decode_dct, get_angles_from_joints, get_data,
                             get_random_sample)
 from src.utils.evaluation import get_dtw_score
@@ -17,12 +18,6 @@ from utils.visualization import get_3D_animation_comparison
 warnings.filterwarnings(
     "ignore", category=UserWarning, message=".*X has feature names.*"
 )
-
-NUM_JOINTS = 15
-SEQUENCE_LENGTH = 25
-HIDDEN_SIZE = 256
-LATENT_SIZE = 256
-NUM_LAYERS = 2
 
 
 def parse_args() -> argparse.Namespace:
