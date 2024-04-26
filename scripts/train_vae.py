@@ -6,6 +6,7 @@ import torch
 from src.trainer import VariationalAutoEncoderTrainer
 from src.utils.data import get_data
 from src.vae_architectures.lstm import LSTMVariationalAutoEncoder
+from src.vae_architectures.signal_cnn import SignalCNNVariationalAutoEncoder
 
 NUM_JOINTS = 15
 SEQUENCE_LENGTH = 25
@@ -29,7 +30,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--model",
         type=str,
-        choices=["LSTM", "CNN"],
+        choices=["lstm", "1dcnn"],
         default="lstm",
         help="Model architecture to train",
     )
@@ -79,16 +80,20 @@ def main(args: argparse.Namespace) -> None:
     )
     match args.model.lower():
         case "lstm":
-            model = LSTMVariationalAutoEncoder(
+            vae = LSTMVariationalAutoEncoder(
                 SEQUENCE_LENGTH, NUM_JOINTS * 3, HIDDEN_SIZE, LATENT_SIZE, NUM_LAYERS
+            )
+        case "1dcnn":
+            vae = SignalCNNVariationalAutoEncoder(
+                SEQUENCE_LENGTH, NUM_JOINTS * 3, HIDDEN_SIZE, LATENT_SIZE
             )
         case _:
             raise ValueError(f"Model {args.model} not supported")
 
     loss_fn = torch.nn.MSELoss(reduction="sum")
-    optimizer = torch.optim.Adam(model.parameters(), args.learning_rate)
+    optimizer = torch.optim.Adam(vae.parameters(), args.learning_rate)
     trainer = VariationalAutoEncoderTrainer(
-        model,
+        vae,
         train_dl,
         val_dl,
         loss_fn,

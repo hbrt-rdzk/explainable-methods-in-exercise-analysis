@@ -2,8 +2,6 @@ import numpy as np
 import pandas as pd
 from tslearn.metrics import dtw, dtw_path
 
-from src.utils.constants import ANGLES_FEATURES
-
 
 def get_dtw_score(reference: pd.DataFrame, query: pd.DataFrame) -> float:
     """Calculate dtw score between two signals"""

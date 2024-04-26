@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
-from src.utils.constants import COLORS, OPENPOSE_CONNECTIONS
+from src.utils.constants import OPENPOSE_CONNECTIONS
 
 X_LIM = (-0.4, 0.4)
 Y_LIM = (-0.4, 0.4)
@@ -58,7 +58,7 @@ def get_3D_animation_comparison(
 
     def update(i):
         ax.clear()
-        ax.set_title("Error label: " + ' '.join(label.split('_')))
+        ax.set_title("Error label: " + " ".join(label.split("_")))
 
         ax.set_xticks([])
         ax.set_yticks([])
@@ -74,14 +74,18 @@ def get_3D_animation_comparison(
         frame_data_ref = data_ref[i]
 
         ax.scatter3D(
-            frame_data_ref[:, 0], frame_data_ref[:, 1], frame_data_ref[:, 2], c="red", label="Original"
+            frame_data_ref[:, 0],
+            frame_data_ref[:, 1],
+            frame_data_ref[:, 2],
+            c="red",
+            label="Original",
         )
         ax.scatter3D(
             frame_data_query[:, 0],
             frame_data_query[:, 1],
             frame_data_query[:, 2],
             c="green",
-            label="Corrected"
+            label="Corrected",
         )
         ax.legend()
 

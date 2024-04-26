@@ -63,16 +63,28 @@ def get_angles_from_joints(joints: np.ndarray, angles_formula: dict) -> pd.DataF
         angles[angle_name] = []
         joints_3d_positions = joints[:, angle_joints]
         for frame in joints_3d_positions:
-            angles[angle_name].append(calculate_3D_angle(*frame))
+            angles[angle_name].append(calculate_3D_angle(*frame, by_axis="X"))
 
     return pd.DataFrame(angles)
 
 
-def calculate_3D_angle(A: np.ndarray, B: np.ndarray, C: np.ndarray) -> float:
+def calculate_3D_angle(
+    A: np.ndarray, B: np.ndarray, C: np.ndarray, by_axis: str = None
+) -> float:
     """Calculate angle between 3 points in 3D space"""
     if not (A.shape == B.shape == C.shape == (3,)):
         raise ValueError("Input arrays must all be of shape (3,).")
 
+    if by_axis == "X":
+        axis_idx = [1, 2]
+    elif by_axis == "Y":
+        axis_idx = [0, 2]
+    elif by_axis == "Z":
+        axis_idx = [0, 1]
+    else:
+        axis_idx = [0, 1, 2]
+
+    A, B, C = A[axis_idx], B[axis_idx], C[axis_idx]
     ba = A - B
     bc = C - B
 
@@ -115,33 +127,36 @@ def segment_signal(
 ) -> pd.DataFrame:
     x = x[important_angles]
     rep_signal = x.mean(axis=1)
-    zero_point = np.mean(rep_signal)
+    # zero_point = np.mean(rep_signal)
 
-    variances = []
-    for idx in range(0, len(rep_signal) - sliding_window_size + 1, 1):
-        window = rep_signal[idx : idx + sliding_window_size]
-        variances.append(np.std(window))
-    variances = np.array(variances)
+    mid_idx = np.argmin(rep_signal)
+    finish_idx = len(rep_signal) - 1
 
-    below_mean_indexes = np.where(rep_signal < zero_point)[0]
-    above_mean_indexes = np.where(rep_signal > zero_point)[0]
+    # variances = []
+    # for idx in range(0, len(rep_signal) - sliding_window_size + 1, 1):
+    #     window = rep_signal[idx : idx + sliding_window_size]
+    #     variances.append(np.std(window))
+    # variances = np.array(variances)
 
-    mid_phase_idx = (
-        below_mean_indexes[np.argmin(variances[below_mean_indexes])]
-        + sliding_window_size // 2
-    )
-    above_mean_indexes_left = above_mean_indexes[above_mean_indexes < mid_phase_idx]
-    start_phase_idx = (
-        above_mean_indexes_left[np.argmin(variances[above_mean_indexes_left])]
-        + sliding_window_size // 2
-    )
+    # below_mean_indexes = np.where(rep_signal < zero_point)[0]
+    # above_mean_indexes = np.where(rep_signal > zero_point)[0]
 
-    above_mean_indexes_right = above_mean_indexes[above_mean_indexes > mid_phase_idx]
-    above_mean_indexes_right = above_mean_indexes_right[
-        above_mean_indexes_right < len(variances)
-    ]
-    finish_phase_idx = (
-        above_mean_indexes_right[np.argmin(variances[above_mean_indexes_right])]
-        + sliding_window_size // 2
-    )
-    return x.iloc[[start_phase_idx, mid_phase_idx, finish_phase_idx]]
+    # mid_phase_idx = (
+    #     below_mean_indexes[np.argmin(variances[below_mean_indexes])]
+    #     + sliding_window_size // 2
+    # )
+    # above_mean_indexes_left = above_mean_indexes[above_mean_indexes < mid_phase_idx]
+    # start_phase_idx = (
+    #     above_mean_indexes_left[np.argmin(variances[above_mean_indexes_left])]
+    #     + sliding_window_size // 2
+    # )
+
+    # above_mean_indexes_right = above_mean_indexes[above_mean_indexes > mid_phase_idx]
+    # above_mean_indexes_right = above_mean_indexes_right[
+    #     above_mean_indexes_right < len(variances)
+    # ]
+    # finish_phase_idx = (
+    #     above_mean_indexes_right[np.argmin(variances[above_mean_indexes_right])]
+    #     + sliding_window_size // 2
+    # )
+    return x.iloc[[0, mid_idx, finish_idx]]

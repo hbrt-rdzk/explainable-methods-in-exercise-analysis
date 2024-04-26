@@ -7,6 +7,7 @@ from sklearn.tree import DecisionTreeClassifier
 from src.trainer import ClassifierTrainer
 from src.utils.data import encode_samples_to_latent, get_data
 from src.vae_architectures.lstm import LSTMVariationalAutoEncoder
+from src.vae_architectures.signal_cnn import SignalCNNVariationalAutoEncoder
 
 NUM_JOINTS = 15
 SEQUENCE_LENGTH = 25
@@ -57,19 +58,23 @@ def main(args: argparse.Namespace) -> None:
     train_data = torch.stack(train_dl.dataset.data)
     val_data = torch.stack(val_dl.dataset.data)
 
-    architecture_name = args.autoencoder.split(".")[0].split("/")[-1].split("_")[-1]
-    match architecture_name.lower():
+    vae_architecture_name = args.autoencoder.split(".")[0].split("/")[-1].split("_")[-1]
+    match vae_architecture_name.lower():
         case "lstm":
-            model = LSTMVariationalAutoEncoder(
+            vae = LSTMVariationalAutoEncoder(
                 SEQUENCE_LENGTH, NUM_JOINTS * 3, HIDDEN_SIZE, LATENT_SIZE, NUM_LAYERS
+            )
+        case "1dcnn":
+            vae = SignalCNNVariationalAutoEncoder(
+                NUM_JOINTS * 3, HIDDEN_SIZE, LATENT_SIZE
             )
         case _:
             raise ValueError("Model name not supported")
 
-    model.load_state_dict(torch.load(args.autoencoder))
+    vae.load_state_dict(torch.load(args.autoencoder))
 
-    latent_train_data = encode_samples_to_latent(model, train_data).detach().numpy()
-    latent_test_data = encode_samples_to_latent(model, val_data).detach().numpy()
+    latent_train_data = encode_samples_to_latent(vae, train_data).detach().numpy()
+    latent_test_data = encode_samples_to_latent(vae, val_data).detach().numpy()
 
     train_labels, test_labels = (
         train_dl.dataset.labels_encoded.numpy(),
@@ -83,7 +88,7 @@ def main(args: argparse.Namespace) -> None:
         test_labels,
     )
     trainer.train()
-    trainer.save(args.weights_dir, f"{args.representation}_")
+    trainer.save(args.weights_dir, f"{vae_architecture_name}_")
 
 
 if __name__ == "__main__":

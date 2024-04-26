@@ -7,14 +7,11 @@ import torch
 
 from src.explainer import Explainer
 from src.utils.constants import OPENPOSE_ANGLES
-from src.utils.data import (
-    decode_dct,
-    get_angles_from_joints,
-    get_data,
-    get_random_sample,
-)
+from src.utils.data import (decode_dct, get_angles_from_joints, get_data,
+                            get_random_sample)
 from src.utils.evaluation import get_dtw_score
 from src.vae_architectures.lstm import LSTMVariationalAutoEncoder
+from src.vae_architectures.signal_cnn import SignalCNNVariationalAutoEncoder
 from utils.visualization import get_3D_animation_comparison
 
 warnings.filterwarnings(
@@ -96,17 +93,21 @@ def main(args: argparse.Namespace) -> None:
     architecture_name = args.autoencoder.split(".")[0].split("/")[-1].split("_")[-1]
     match architecture_name.lower():
         case "lstm":
-            ae = LSTMVariationalAutoEncoder(
+            vae = LSTMVariationalAutoEncoder(
                 SEQUENCE_LENGTH, NUM_JOINTS * 3, HIDDEN_SIZE, LATENT_SIZE, NUM_LAYERS
+            )
+        case "1dcnn":
+            vae = SignalCNNVariationalAutoEncoder(
+                SEQUENCE_LENGTH, NUM_JOINTS * 3, HIDDEN_SIZE, LATENT_SIZE
             )
         case _:
             raise ValueError("Model name not supported")
 
-    ae.load_state_dict(torch.load(args.autoencoder))
+    vae.load_state_dict(torch.load(args.autoencoder))
     with open(args.classifier, "rb") as f:
         clf = pickle.load(f)
 
-    explainer = Explainer(ae, clf, train_dl, args.exercise)
+    explainer = Explainer(vae, clf, train_dl, args.exercise)
     match args.method:
         case "cf":
             fixed_sample_dct = explainer.generate_cf(query_sample_dct.detach().numpy())
@@ -133,7 +134,7 @@ def main(args: argparse.Namespace) -> None:
         query_sample_angles
     )
     fixed_classification_report = explainer.statistical_classification(
-        query_sample_angles
+        fixed_query_sample_angles
     )
 
     incorrect_dtw_score = get_dtw_score(

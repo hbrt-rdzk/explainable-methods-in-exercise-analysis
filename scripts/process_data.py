@@ -19,14 +19,19 @@ def parse_args() -> argparse.Namespace:
         default="data",
         help="Directory to save the preprocessed data",
     )
-
+    parser.add_argument(
+        "--train_size",
+        type=float,
+        default=0.8,
+        help="Train to test dataset ratio",
+    )
     return parser.parse_args()
 
 
 def main(args: argparse.Namespace) -> None:
     dataset = pd.read_pickle(args.data_path)
 
-    processor = Processor(dataset)
+    processor = Processor(dataset, args.train_size)
     processor.process_data(args.output_dir)
 
 

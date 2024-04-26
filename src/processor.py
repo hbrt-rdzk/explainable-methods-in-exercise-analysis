@@ -22,10 +22,11 @@ class Processor:
     - DCT coefficients
     """
 
-    def __init__(self, dataset: dict):
+    def __init__(self, dataset: dict, train_size: float) -> None:
         self.dataset = dataset
         self.poses = self.dataset["poses"]
         self.labels = self.dataset["labels"]
+        self.train_size = train_size
 
     def process_data(self, output_dir: str) -> None:
         """Process data from provided EC3D path"""
@@ -48,7 +49,7 @@ class Processor:
             for _, rep in df.groupby(["label", "rep", "subject"]):
                 reps.append(rep)
             train, test = train_test_split(
-                reps, train_size=0.8, shuffle=True, random_state=42
+                reps, train_size=self.train_size, shuffle=True, random_state=42
             )
             train_df, test_df = pd.concat(train), pd.concat(test)
 

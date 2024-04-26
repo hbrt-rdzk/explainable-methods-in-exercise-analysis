@@ -23,7 +23,7 @@ class Explainer:
         classifier: BaseEstimator,
         dl: DataLoader,
         exercise: str,
-        threshold: float = 10.0,
+        threshold: float = 15.0,
     ) -> None:
         self.autoencoder = autoencoder
         self.classifier = classifier
@@ -116,14 +116,13 @@ class Explainer:
         else:
             phases = query_angles.loc[len(query_angles) // 2]
         phases = phases.reset_index(drop=True)
-
         results = reference_angles - phases
         results["phase"] = phases_names
         results = results.set_index("phase")
         result_str = ""
         for phase, result in results.iterrows():
-            wrong_angles = result.loc[result.abs() > self.classification_threshold]
-            for angle_name, difference in wrong_angles.items():
+            # wrong_angles = result.loc[result.abs() > self.classification_threshold]
+            for angle_name, difference in result.items():
                 result_str += f"At {phase} phase {angle_name} angle was different from reference by {difference:.2f} degrees.\n"
 
         if not result_str:
