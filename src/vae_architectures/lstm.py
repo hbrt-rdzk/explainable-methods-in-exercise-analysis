@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 
+from src.utils.inference import reparameterization_trick
+
 
 class LSTMVariationalAutoEncoder(nn.Module):
     """Variational AutoEncoder based on LSTM architecture"""
@@ -36,26 +38,20 @@ class LSTMEncoder(nn.Module):
         self.encoder_lstm = nn.LSTM(
             input_size, hidden_size, num_layers, batch_first=True
         )
-        self.distribution_mean = nn.Linear(hidden_size, latent_size)
-        self.distribution_var = nn.Linear(hidden_size, latent_size)
+        self.mlp = nn.Linear(hidden_size, latent_size)
+        self.distribution_mean = nn.Linear(latent_size, latent_size)
+        self.distribution_var = nn.Linear(latent_size, latent_size)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        output, (_, _) = self.encoder_lstm(x)
-        output = output.sum(dim=1)
+        x, (_, _) = self.encoder_lstm(x)
+        x = x.sum(dim=1)
+        x = self.mlp(x)
 
-        mean = self.distribution_mean(output)
-        log_var = self.distribution_var(output)
+        mean = self.distribution_mean(x)
+        log_var = self.distribution_var(x)
 
-        z = self.reparameterization_trick(mean, log_var)
-        return output, mean, log_var
-
-    def reparameterization_trick(
-        self, mean: torch.Tensor, logvar: torch.Tensor
-    ) -> torch.Tensor:
-        std = torch.exp(0.5 * logvar)
-        epsilon = torch.randn_like(std)
-        z = mean + std * epsilon
-        return z
+        z = reparameterization_trick(mean, log_var)
+        return x, mean, log_var
 
 
 class LSTMDecoder(nn.Module):
@@ -71,11 +67,14 @@ class LSTMDecoder(nn.Module):
     ) -> None:
         super(LSTMDecoder, self).__init__()
         self.sequence_length = sequence_length
-        self.decoder = nn.LSTM(latent_size, hidden_size, num_layers, batch_first=True)
-        self.decoder_fc = nn.Linear(hidden_size, input_size)
+
+        self.mlp1 = nn.Linear(latent_size, hidden_size)
+        self.decoder = nn.LSTM(hidden_size, hidden_size, num_layers, batch_first=True)
+        self.mlp2 = nn.Linear(hidden_size, input_size)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        output = x.unsqueeze(1).repeat(1, self.sequence_length, 1)
-        output, _ = self.decoder(output)
-        output = self.decoder_fc(output)
-        return output
+        x = x.unsqueeze(1).repeat(1, self.sequence_length, 1)
+        x = self.mlp1(x)
+        x, _ = self.decoder(x)
+        x = self.mlp2(x)
+        return x

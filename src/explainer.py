@@ -121,8 +121,8 @@ class Explainer:
         results = results.set_index("phase")
         result_str = ""
         for phase, result in results.iterrows():
-            # wrong_angles = result.loc[result.abs() > self.classification_threshold]
-            for angle_name, difference in result.items():
+            wrong_angles = result.loc[result.abs() > self.classification_threshold]
+            for angle_name, difference in wrong_angles.items():
                 result_str += f"At {phase} phase {angle_name} angle was different from reference by {difference:.2f} degrees.\n"
 
         if not result_str:

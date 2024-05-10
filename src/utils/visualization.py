@@ -1,3 +1,5 @@
+import os
+
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
@@ -13,11 +15,17 @@ ELEV = 28
 AZIM = 30
 
 
-def get_3D_animation(data: torch.Tensor, color: str = "red") -> animation.FuncAnimation:
+def get_3D_animation(
+    data: torch.Tensor, color: str = "red", is_plank: bool = False
+) -> animation.FuncAnimation:
     """Return animation of the joints representation in time"""
     data = data.reshape(-1, 15, 3)
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
+
+    if is_plank:
+        data = data[..., [0, 2, 1]]
+        data[..., 2] = -data[..., 2]
 
     def update(i):
         ax.clear()
@@ -43,15 +51,22 @@ def get_3D_animation(data: torch.Tensor, color: str = "red") -> animation.FuncAn
                 color=color,
             )
 
-    return animation.FuncAnimation(fig, update, frames=data.shape[0], interval=120)
+    return animation.FuncAnimation(fig, update, frames=data.shape[0], interval=90)
 
 
 def get_3D_animation_comparison(
-    data_ref: np.ndarray, data_query: np.ndarray, label: str
+    data_ref: np.ndarray, data_query: np.ndarray, label: str, is_plank: bool = False
 ) -> animation.FuncAnimation:
     """Return animation of incorrect and fixed joints representations in time"""
     data_ref = data_ref.reshape(-1, 15, 3)
     data_query = data_query.reshape(-1, 15, 3)
+
+    if is_plank:
+        data_query = data_query[..., [0, 2, 1]]
+        data_query[..., 2] = -data_query[..., 2]
+
+        data_ref = data_ref[..., [0, 2, 1]]
+        data_ref[..., 2] = -data_ref[..., 2]
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
@@ -68,7 +83,7 @@ def get_3D_animation_comparison(
         ax.set_ylim3d(*Y_LIM)
         ax.set_zlim3d(*Z_LIM)
 
-        ax.view_init(elev=ELEV, azim=AZIM + i * 0.5)
+        ax.view_init(elev=ELEV, azim=AZIM)
 
         frame_data_query = data_query[i]
         frame_data_ref = data_ref[i]
@@ -103,6 +118,9 @@ def get_3D_animation_comparison(
                 color="green",
             )
 
-    return animation.FuncAnimation(
-        fig, update, frames=data_query.shape[0], interval=120
-    )
+    return animation.FuncAnimation(fig, update, frames=data_query.shape[0], interval=90)
+
+
+def save_anim(anim: animation.FuncAnimation, path: str) -> None:
+    os.makedirs("/".join(path.split("/")[:-1]), exist_ok=True)
+    anim.save(path, writer="ffmpeg")

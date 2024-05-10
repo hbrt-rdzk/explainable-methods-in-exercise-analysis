@@ -11,9 +11,11 @@ from src.utils.constants import (HIDDEN_SIZE, LATENT_SIZE, NUM_JOINTS,
 from src.utils.data import (decode_dct, get_angles_from_joints, get_data,
                             get_random_sample)
 from src.utils.evaluation import get_dtw_score
+from src.utils.visualization import save_anim
+from src.vae_architectures.graph_cnn import GraphVariationalAutoEncoder
 from src.vae_architectures.lstm import LSTMVariationalAutoEncoder
 from src.vae_architectures.signal_cnn import SignalCNNVariationalAutoEncoder
-from utils.visualization import get_3D_animation_comparison
+from utils.visualization import get_3D_animation, get_3D_animation_comparison
 
 warnings.filterwarnings(
     "ignore", category=UserWarning, message=".*X has feature names.*"
@@ -91,8 +93,12 @@ def main(args: argparse.Namespace) -> None:
             vae = LSTMVariationalAutoEncoder(
                 SEQUENCE_LENGTH, NUM_JOINTS * 3, HIDDEN_SIZE, LATENT_SIZE, NUM_LAYERS
             )
-        case "1dcnn":
+        case "cnn":
             vae = SignalCNNVariationalAutoEncoder(
+                SEQUENCE_LENGTH, NUM_JOINTS * 3, HIDDEN_SIZE, LATENT_SIZE
+            )
+        case "graph":
+            vae = GraphVariationalAutoEncoder(
                 SEQUENCE_LENGTH, NUM_JOINTS * 3, HIDDEN_SIZE, LATENT_SIZE
             )
         case _:
@@ -102,7 +108,7 @@ def main(args: argparse.Namespace) -> None:
     with open(args.classifier, "rb") as f:
         clf = pickle.load(f)
 
-    explainer = Explainer(vae, clf, train_dl, args.exercise)
+    explainer = Explainer(vae, clf, train_dl, args.exercise, threshold=20)
     match args.method:
         case "cf":
             fixed_sample_dct = explainer.generate_cf(query_sample_dct.detach().numpy())
@@ -150,13 +156,11 @@ def main(args: argparse.Namespace) -> None:
     )
 
     anim = get_3D_animation_comparison(
-        query_sample, fixed_query_sample, args.sample_label
+        query_sample, fixed_query_sample, args.sample_label, is_plank=True if args.exercise == 'plank' else False
     )
-    anim.save(
-        os.path.join(args.output_dir, args.exercise, f"{args.sample_label}_fixed.mp4"),
-        writer="ffmpeg",
-    )
-    print(f"Fixed sample comparison saved in {args.output_dir}")
+    anim_path = os.path.join(args.output_dir, args.exercise, f"{args.sample_label}_fixed.mp4")
+    save_anim(anim, anim_path)
+    print(f"Fixed sample comparison saved in {anim_path}")
 
 
 if __name__ == "__main__":

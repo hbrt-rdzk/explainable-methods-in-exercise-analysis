@@ -42,12 +42,9 @@ class SignalCNNEncoder(nn.Module):
         self.conv2 = nn.Conv1d(hidden_size, hidden_size, kernel_size=3, padding=1)
         self.pool = nn.MaxPool1d(kernel_size=2, stride=2)
 
-        self.distribution_mean = nn.Linear(
-            hidden_size * (sequence_length // 4), latent_size
-        )
-        self.distribution_var = nn.Linear(
-            hidden_size * (sequence_length // 4), latent_size
-        )
+        self.mlp = nn.Linear(hidden_size, latent_size)
+        self.distribution_mean = nn.Linear(latent_size, latent_size)
+        self.distribution_var = nn.Linear(latent_size, latent_size)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = x.permute(0, 2, 1)
@@ -59,13 +56,14 @@ class SignalCNNEncoder(nn.Module):
         x = self.relu(x)
         x = self.pool(x)
 
-        x = self.flatten(x)
+        x = torch.sum(x, dim=2)
 
+        x = self.mlp(x)
         mean = self.distribution_mean(x)
         log_var = self.distribution_var(x)
 
         z = reparameterization_trick(mean, log_var)
-        return z, mean, log_var
+        return x, mean, log_var
 
 
 class SignalCNNDecoder(nn.Module):
@@ -81,17 +79,18 @@ class SignalCNNDecoder(nn.Module):
         super(SignalCNNDecoder, self).__init__()
         self.before_flatten_length = sequence_length // 4
         self.relu = nn.ReLU()
-        self.mlp = nn.Linear(latent_size, hidden_size * self.before_flatten_length)
 
+        self.mlp1 = nn.Linear(latent_size, hidden_size * self.before_flatten_length)
         self.conv1 = nn.ConvTranspose1d(
             hidden_size, hidden_size, kernel_size=2, stride=2
         )
         self.conv2 = nn.ConvTranspose1d(
-            hidden_size, input_size, kernel_size=3, stride=2
+            hidden_size, hidden_size, kernel_size=3, stride=2
         )
+        self.mlp2 = nn.Linear(hidden_size, input_size)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.mlp(x)
+        x = self.mlp1(x)
         x = self.relu(x)
         x = x.view(x.size(0), -1, self.before_flatten_length)
 
@@ -102,4 +101,6 @@ class SignalCNNDecoder(nn.Module):
         x = self.relu(x)
 
         x = x.permute(0, 2, 1)
+
+        x = self.mlp2(x)
         return x

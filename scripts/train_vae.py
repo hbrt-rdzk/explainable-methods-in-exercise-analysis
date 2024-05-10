@@ -7,6 +7,7 @@ from src.trainer import VariationalAutoEncoderTrainer
 from src.utils.constants import (HIDDEN_SIZE, LATENT_SIZE, NUM_JOINTS,
                                  NUM_LAYERS, SEQUENCE_LENGTH)
 from src.utils.data import get_data
+from src.vae_architectures.graph_cnn import GraphVariationalAutoEncoder
 from src.vae_architectures.lstm import LSTMVariationalAutoEncoder
 from src.vae_architectures.signal_cnn import SignalCNNVariationalAutoEncoder
 
@@ -25,7 +26,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--model",
         type=str,
-        choices=["lstm", "1dcnn"],
+        choices=["lstm", "cnn", "graph"],
         default="lstm",
         help="Model architecture to train",
     )
@@ -78,8 +79,12 @@ def main(args: argparse.Namespace) -> None:
             vae = LSTMVariationalAutoEncoder(
                 SEQUENCE_LENGTH, NUM_JOINTS * 3, HIDDEN_SIZE, LATENT_SIZE, NUM_LAYERS
             )
-        case "1dcnn":
+        case "cnn":
             vae = SignalCNNVariationalAutoEncoder(
+                SEQUENCE_LENGTH, NUM_JOINTS * 3, HIDDEN_SIZE, LATENT_SIZE
+            )
+        case "graph":
+            vae = GraphVariationalAutoEncoder(
                 SEQUENCE_LENGTH, NUM_JOINTS * 3, HIDDEN_SIZE, LATENT_SIZE
             )
         case _:
