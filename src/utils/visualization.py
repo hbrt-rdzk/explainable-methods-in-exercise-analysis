@@ -11,8 +11,8 @@ X_LIM = (-0.4, 0.4)
 Y_LIM = (-0.4, 0.4)
 Z_LIM = (-0.4, 0.4)
 
-ELEV = 28
-AZIM = 30
+ELEV = 0
+AZIM = 0
 
 
 def get_3D_animation(
@@ -82,6 +82,12 @@ def get_3D_animation_comparison(
         ax.set_xlim3d(*X_LIM)
         ax.set_ylim3d(*Y_LIM)
         ax.set_zlim3d(*Z_LIM)
+
+        ax.xaxis.pane.fill = False
+        ax.yaxis.pane.fill = False
+        ax.zaxis.pane.fill = False
+
+        ax.grid(False)
 
         ax.view_init(elev=ELEV, azim=AZIM)
 

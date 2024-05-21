@@ -41,6 +41,9 @@ class VariationalAutoEncoderTrainer:
         for epoch in range(num_epochs):
             self.model.train()
             losses = 0
+            mse_loss = 0
+            kld_loss = 0
+
             for inputs, _, _ in tqdm(self.train_loader):
                 inputs = inputs.to(self.device)
                 self.optimizer.zero_grad()
@@ -51,19 +54,27 @@ class VariationalAutoEncoderTrainer:
                     1 + log_vars - means.pow(2) - log_vars.exp()
                 )
                 loss = base_loss + kld_loss
-
                 loss.backward()
-                losses += loss.item()
-
                 self.optimizer.step()
 
-            val_loss = self.evaluate()
+                losses += loss.item()
+                mse_loss += base_loss.item()
+                kld_loss += kld_loss.item()
+
+            val_mse_loss, val_kld_loss = self.evaluate()
             logger.info(
                 f"Epoch {epoch+1}/{num_epochs}: "
-                f"Val Loss: {val_loss}, Train Loss: {losses}"
+                f"Val Loss: {val_mse_loss + val_kld_loss}, Train Loss: {losses}"
             )
 
-            learning_results.append({"train_loss": losses, "val_loss": val_loss})
+            learning_results.append(
+                {
+                    "train_kld_loss": kld_loss,
+                    "train_mse_loss": mse_loss,
+                    "val_kld_loss": val_kld_loss,
+                    "val_mse_loss": val_mse_loss,
+                }
+            )
             if early_stopper(losses, self.model):
                 logger.warning("Eary stopping the training!")
                 break
@@ -72,10 +83,11 @@ class VariationalAutoEncoderTrainer:
         logger.info(f"Best model saved in {weights_path}")
         return learning_results
 
-    def evaluate(self) -> float:
+    def evaluate(self) -> tuple[float, float]:
         """Evaluate Variational Autoencoder on validation dataset"""
         self.model.eval()
-        losses = 0
+        mse_loss = 0
+        kld_loss = 0
         with torch.no_grad():
             for inputs, _, _ in self.val_loader:
                 inputs = inputs.to(self.device)
@@ -84,9 +96,9 @@ class VariationalAutoEncoderTrainer:
                 kld_loss = -0.5 * torch.sum(
                     1 + log_vars - means.pow(2) - log_vars.exp()
                 )
-                loss = base_loss + kld_loss
-                losses += loss.item()
-        return losses
+                mse_loss += base_loss.item()
+                kld_loss += kld_loss.item()
+        return mse_loss, kld_loss
 
 
 class EarlyStopper:

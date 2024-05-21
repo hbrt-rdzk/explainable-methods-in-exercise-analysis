@@ -5,12 +5,8 @@ import torch
 from sklearn.tree import DecisionTreeClassifier
 
 from src.trainer import ClassifierTrainer
-from src.utils.constants import (HIDDEN_SIZE, LATENT_SIZE, NUM_JOINTS,
-                                 NUM_LAYERS, SEQUENCE_LENGTH)
 from src.utils.data import encode_samples_to_latent, get_data
-from src.vae_architectures.graph_cnn import GraphVariationalAutoEncoder
-from src.vae_architectures.lstm import LSTMVariationalAutoEncoder
-from src.vae_architectures.signal_cnn import SignalCNNVariationalAutoEncoder
+from src.utils.models import load_vae
 
 
 def parse_args() -> argparse.Namespace:
@@ -56,23 +52,7 @@ def main(args: argparse.Namespace) -> None:
     val_data = torch.stack(val_dl.dataset.data)
 
     vae_architecture_name = args.autoencoder.split(".")[0].split("/")[-1].split("_")[-1]
-    match vae_architecture_name.lower():
-        case "lstm":
-            vae = LSTMVariationalAutoEncoder(
-                SEQUENCE_LENGTH, NUM_JOINTS * 3, HIDDEN_SIZE, LATENT_SIZE, NUM_LAYERS
-            )
-        case "cnn":
-            vae = SignalCNNVariationalAutoEncoder(
-                SEQUENCE_LENGTH, NUM_JOINTS * 3, HIDDEN_SIZE, LATENT_SIZE
-            )
-        case "graph":
-            vae = GraphVariationalAutoEncoder(
-                SEQUENCE_LENGTH, NUM_JOINTS * 3, HIDDEN_SIZE, LATENT_SIZE
-            )
-        case _:
-            raise ValueError("Model name not supported")
-
-    vae.load_state_dict(torch.load(args.autoencoder))
+    vae = load_vae(vae_architecture_name, args.autoencoder)
 
     latent_train_data = encode_samples_to_latent(vae, train_data).detach().numpy()
     latent_test_data = encode_samples_to_latent(vae, val_data).detach().numpy()

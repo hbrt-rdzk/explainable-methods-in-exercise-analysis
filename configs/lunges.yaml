@@ -6,18 +6,18 @@ important_angles: [
 ]
 reference_table: 
   start:
-    left_knee: 175
-    right_knee: 175
+    left_knee: 170
+    right_knee: 170
     left_hip: 175
     right_hip: 175
   mid:
-    left_knee: 50
-    right_knee: 50
-    left_hip: 55
-    right_hip: 55
+    left_knee: 92
+    right_knee: 75
+    left_hip: 163
+    right_hip: 95
   finish:
-    left_knee: 175
-    right_knee: 175
+    left_knee: 170
+    right_knee: 170
     left_hip: 175
     right_hip: 175
 

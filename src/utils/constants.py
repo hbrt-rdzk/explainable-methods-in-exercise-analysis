@@ -7,6 +7,8 @@ class ANGLES_FEATURES(Enum):
     PLANK_ANGLES = ["left_knee", "right_knee", "left_hip", "right_hip"]
 
 
+EXERCISES = ("squat", "lunges", "plank")
+
 SQUAT_LABELS = {
     1: "correct",
     2: "feet_too_wide",
@@ -94,3 +96,4 @@ SEQUENCE_LENGTH = 25
 LATENT_SIZE = 4
 NUM_LAYERS = 2
 HIDDEN_SIZE = 256
+BATCH_SIZE = 8

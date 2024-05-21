@@ -8,16 +8,16 @@ reference_table:
   start:
     left_knee: 175
     right_knee: 175
-    left_hip: 175
-    right_hip: 175
+    left_hip: 170
+    right_hip: 170
   mid:
     left_knee: 55
     right_knee: 55
-    left_hip: 40
-    right_hip: 40
+    left_hip: 47
+    right_hip: 47
   finish:
     left_knee: 175
     right_knee: 175
-    left_hip: 175
-    right_hip: 175
+    left_hip: 170
+    right_hip: 170
 

@@ -8,8 +8,7 @@ from sklearn.base import BaseEstimator
 from torch import nn
 from torch.utils.data import DataLoader
 
-from src.utils.data import (decode_samples_from_latent,
-                            encode_samples_to_latent, segment_signal)
+from src.utils.data import encode_samples_to_latent, segment_signal
 
 
 class Explainer:
@@ -39,12 +38,12 @@ class Explainer:
             encode_samples_to_latent(self.autoencoder, self.data).detach().numpy()
         )
 
-        with open(f"configs/{exercise}.yaml", "r") as file:
-            file_data = yaml.safe_load(file)
-            self.important_angles = file_data["important_angles"]
-            self.reference_table = pd.DataFrame(
-                file_data["reference_table"]
-            ).transpose()
+        # with open(f"configs/{exercise}.yaml", "r") as file:
+        #     file_data = yaml.safe_load(file)
+        #     self.important_angles = file_data["important_angles"]
+        #     self.reference_table = pd.DataFrame(
+        #         file_data["reference_table"]
+        #     ).transpose()
         self.classification_threshold = threshold
 
     def generate_cf(self, query: np.ndarray) -> np.ndarray:
@@ -73,14 +72,7 @@ class Explainer:
             desired_class="opposite",
             stopping_threshold=0.99,
         )
-        cf = explanation.cf_examples_list[0].final_cfs_df.values[:, :-1]
-
-        return (
-            decode_samples_from_latent(self.autoencoder, torch.Tensor(cf))
-            .detach()
-            .numpy()
-            .squeeze()
-        )
+        return explanation.cf_examples_list[0].final_cfs_df.values[:, :-1]
 
     def get_closest_correct(self, query: np.ndarray) -> np.ndarray:
         latent_query = (
@@ -100,12 +92,7 @@ class Explainer:
         if cf.ndim == 1:
             cf = np.expand_dims(cf, 0)
 
-        return (
-            decode_samples_from_latent(self.autoencoder, torch.Tensor(cf))
-            .detach()
-            .numpy()
-            .squeeze()
-        )
+        return cf
 
     def statistical_classification(self, query_angles: pd.DataFrame) -> str:
         phases_names = self.reference_table.index.values

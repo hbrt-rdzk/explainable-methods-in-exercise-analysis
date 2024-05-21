@@ -1,20 +1,17 @@
 import argparse
 import os
-import pickle
 import warnings
 
 import torch
 
 from src.explainer import Explainer
-from src.utils.constants import (HIDDEN_SIZE, LATENT_SIZE, NUM_JOINTS,
-                                 NUM_LAYERS, OPENPOSE_ANGLES, SEQUENCE_LENGTH)
-from src.utils.data import (decode_dct, get_angles_from_joints, get_data,
+from src.utils.constants import OPENPOSE_ANGLES
+from src.utils.data import (decode_dct, decode_samples_from_latent,
+                            get_angles_from_joints, get_data,
                             get_random_sample)
 from src.utils.evaluation import get_dtw_score
+from src.utils.models import load_models
 from src.utils.visualization import save_anim
-from src.vae_architectures.graph_cnn import GraphVariationalAutoEncoder
-from src.vae_architectures.lstm import LSTMVariationalAutoEncoder
-from src.vae_architectures.signal_cnn import SignalCNNVariationalAutoEncoder
 from utils.visualization import get_3D_animation, get_3D_animation_comparison
 
 warnings.filterwarnings(
@@ -86,36 +83,18 @@ def main(args: argparse.Namespace) -> None:
     correct_sample_dct, correct_sample_length = get_random_sample(
         val_dl, desired_label="correct"
     )
-
-    architecture_name = args.autoencoder.split(".")[0].split("/")[-1].split("_")[-1]
-    match architecture_name.lower():
-        case "lstm":
-            vae = LSTMVariationalAutoEncoder(
-                SEQUENCE_LENGTH, NUM_JOINTS * 3, HIDDEN_SIZE, LATENT_SIZE, NUM_LAYERS
-            )
-        case "cnn":
-            vae = SignalCNNVariationalAutoEncoder(
-                SEQUENCE_LENGTH, NUM_JOINTS * 3, HIDDEN_SIZE, LATENT_SIZE
-            )
-        case "graph":
-            vae = GraphVariationalAutoEncoder(
-                SEQUENCE_LENGTH, NUM_JOINTS * 3, HIDDEN_SIZE, LATENT_SIZE
-            )
-        case _:
-            raise ValueError("Model name not supported")
-
-    vae.load_state_dict(torch.load(args.autoencoder))
-    with open(args.classifier, "rb") as f:
-        clf = pickle.load(f)
-
+    vae_architecture_name = args.autoencoder.split(".")[0].split("/")[-1].split("_")[-1]
+    vae, clf = load_models(vae_architecture_name, args.autoencoder ,args.classifer)
+    
     explainer = Explainer(vae, clf, train_dl, args.exercise, threshold=20)
     match args.method:
         case "cf":
-            fixed_sample_dct = explainer.generate_cf(query_sample_dct.detach().numpy())
+            fixed_sample_latent = explainer.generate_cf(query_sample_dct.detach().numpy())
         case "closest":
-            fixed_sample_dct = explainer.get_closest_correct(query_sample_dct.detach().numpy())
+            fixed_sample_latent = explainer.get_closest_correct(query_sample_dct.detach().numpy())
         case _:
             raise ValueError("Method not supported")
+    fixed_sample_dct = decode_samples_from_latent(vae, torch.Tensor(fixed_sample_latent)).detach().numpy().squeeze()
 
     correct_sample = decode_dct(correct_sample_dct, correct_sample_length)
     query_sample = decode_dct(query_sample_dct, query_sample_length)
@@ -154,13 +133,19 @@ def main(args: argparse.Namespace) -> None:
         DTW score correct - incorrect: {incorrect_dtw_score:.4f}
         DTW score correct - fixed: {fixed_dtw_score:.4f}\n"""
     )
+    anim_path = os.path.join(args.output_dir, args.exercise, vae_architecture_name, args.sample_label)
 
-    anim = get_3D_animation_comparison(
+    bad_anim = get_3D_animation(query_sample, color="red", is_plank=True if args.exercise == 'plank' else False)
+    fixed_anim = get_3D_animation(fixed_query_sample, color="green", is_plank=True if args.exercise == 'plank' else False)
+    comparitson_anim = get_3D_animation_comparison(
         query_sample, fixed_query_sample, args.sample_label, is_plank=True if args.exercise == 'plank' else False
     )
-    anim_path = os.path.join(args.output_dir, args.exercise, f"{args.sample_label}_fixed.mp4")
-    save_anim(anim, anim_path)
-    print(f"Fixed sample comparison saved in {anim_path}")
+
+    save_anim(bad_anim, anim_path + "_bad.mp4")
+    save_anim(fixed_anim, anim_path + "_fixed.mp4")
+    save_anim(comparitson_anim, anim_path + "_comparison.mp4")
+
+    print(f"Animations saved in {anim_path}")
 
 
 if __name__ == "__main__":
